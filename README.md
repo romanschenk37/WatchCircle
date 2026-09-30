@@ -3,7 +3,7 @@
 ![WatchCircle](./thumbnail.svg)
 
 > [!NOTE]
-> WatchCircle is under development. Shared progress cards and automatic membership for newly created Jellyfin users are available. The inherited Watch together feature remains present; its removal will follow separately.
+> WatchCircle is under development. Shared progress cards, automatic group membership and optional Seerr request attribution are available. The inherited Watch together feature remains present; its removal will follow separately.
 
 ## About
 
@@ -60,7 +60,7 @@ For each buddy, WatchCircle reads Jellyfin **user data** for the item (or for an
 
 Watch history is retroactive—it counts even if someone watched **before** they were added to a group.
 
-Your own account is excluded from the poster overlays and shared progress card. Each other person appears once, even if you share several groups. People without a shared group or without any viewing progress on the title are excluded. If nobody qualifies, the card is hidden.
+Your own account is excluded from the poster overlays and the progress rows. Each other person appears once, even if you share several groups. People without a shared group or without any viewing progress on the title are excluded from the progress rows. If nobody qualifies and there is no Seerr request attribution, the card is hidden.
 
 ### Poster overlays
 
@@ -103,6 +103,25 @@ The shared card appears at the **top** of the season view (above the episode lis
 #### Series
 
 The shared card appears on the **series** detail page. Each row shows that person’s furthest started episode across the show (season and episode index, watch time, and percentage). **Episode finished** refers to that episode, not the entire series.
+
+### Seerr request attribution
+
+When enabled, **Requested by** appears above the progress rows and shows everyone who requested the title in Seerr. Requesters do not need to share a WatchCircle group with you or have started watching. The requester list can appear on its own when nobody in your groups has started the title.
+
+- Movies and series are matched by their **TMDB ID** in Jellyfin's metadata, not by title text.
+- Each Seerr user appears once, even across several requests. Series list the requested seasons; season and episode pages include only requests for their season.
+- Request attribution reads existing requests through the [Seerr API](https://docs.seerr.dev/api/seerr-api/). It does not store request history or add viewing data.
+- The API key stays on the Jellyfin server. Only requester IDs, names and season numbers are returned to viewers; email-only accounts use a neutral `Seerr user <id>` label.
+- If Seerr is disabled, unavailable, has no stored request, or the title has no TMDB ID, the request information is omitted. Watch progress still works.
+
+To configure it, open **Dashboard → Plugins → WatchCircle → Seerr requests**:
+
+1. Enable **Show who requested this title in Seerr**.
+2. Enter the Seerr URL reachable from the Jellyfin server (including any reverse-proxy subpath).
+3. Enter the API key from **Seerr → Settings → General**.
+4. Click **Save and test connection**.
+
+After saving, the key field stays empty; leaving it blank keeps the saved key. When changing the URL, enter the key again. To remove it, disable the integration and check **Remove the saved API key** before saving.
 
 ### Watch together
 
@@ -195,7 +214,7 @@ Jellyfin lists the plugin as **WatchCircle**. Its plugin ID is `33f774e1-5cb2-4a
 
 Plugin metadata for catalog builds is defined in [`build.yaml`](./build.yaml).
 
-Run the group management regression tests with:
+Run the group management and Seerr regression tests with:
 
 ```bash
 dotnet test tests/WatchCircle.Tests/WatchCircle.Tests.csproj --configuration Release

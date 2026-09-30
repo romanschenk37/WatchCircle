@@ -29,4 +29,9 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets watch-together progress tracked for group members.
     /// </summary>
     public WatchTogetherConfiguration WatchTogether { get; set; }
+
+    /// <summary>
+    /// Gets or sets the optional Seerr connection.
+    /// </summary>
+    public SeerrConfiguration Seerr { get; set; } = new();
 }

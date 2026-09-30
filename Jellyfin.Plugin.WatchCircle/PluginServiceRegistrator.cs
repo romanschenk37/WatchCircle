@@ -1,3 +1,5 @@
+using System;
+using System.Net.Http;
 using Jellyfin.Data.Events.Users;
 using Jellyfin.Plugin.WatchCircle.Abstractions;
 using Jellyfin.Plugin.WatchCircle.Infrastructure;
@@ -18,6 +20,11 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     /// <inheritdoc />
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
+        serviceCollection.AddHttpClient<SeerrService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(5);
+            client.MaxResponseContentBufferSize = 2 * 1024 * 1024;
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         serviceCollection.AddSingleton<GroupManagementService>();
         serviceCollection.AddSingleton<IEventConsumer<UserCreatedEventArgs>, UserCreatedConsumer>();
         serviceCollection.AddSingleton<IGroupMembershipService, GroupMembershipService>();

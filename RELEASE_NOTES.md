@@ -1,17 +1,19 @@
-# WatchCircle 1.0.4.0 — one shared progress card
+# WatchCircle 1.0.5.0 — Seerr request attribution
 
-Movie, series and season detail pages now show **one WatchCircle card** with a row for each person who has started the title and shares at least one watch group with you.
+WatchCircle can now show **Requested by** for movies and series that were requested through Seerr.
 
-- Each person appears once, even if you share several groups.
-- Only people with existing Jellyfin viewing progress are included. Completed titles also count.
-- People who have not started the title, people outside your groups and your own account are excluded. If nobody qualifies, the card stays hidden.
-- Each row shows an avatar, username, progress bar and watched time or completion status.
-- Series and seasons include the person's furthest started episode and its progress. **Episode finished** applies to that episode, not the whole show.
-- This display reads existing Jellyfin data; it does not record additional viewing history.
+- Shows all requesters, including people outside your WatchCircle groups and people who have not started watching.
+- Each requester appears once. Series also show which seasons each person requested.
+- Progress rows keep their existing rules: only people sharing a group who have started the title appear there.
+- Request information can appear on its own before anyone has started watching.
+- Matches titles by their TMDB IDs and reads existing Seerr requests without storing an additional request history.
+- Seerr is optional and disabled by default. If it is unavailable, the existing watch progress display continues working.
 
-Automatic group membership from 1.0.3.0 remains available. The inherited Watch together feature is still present and will be removed separately.
+Configure it under **Dashboard → Plugins → WatchCircle → Seerr requests**: enable the option, enter your Seerr URL and API key, then click **Save and test connection**. The URL must be reachable from the Jellyfin server. The saved key is not returned to regular users or prefilled in the settings page.
 
-Validation: eleven automated group tests, JavaScript syntax check and browser checks with simulated Jellyfin data for films, series, empty results, many people, equal display names and progress refresh. Runtime verification on your Jellyfin 12.1 server is still pending.
+The existing automatic group membership and shared progress card remain available. The inherited Watch together feature is still present.
+
+Validation: 29 automated tests, successful release build, JavaScript syntax checks and browser checks using simulated Seerr/Jellyfin data. Your actual Seerr instance has not been connected or tested yet.
 
 Update WatchCircle through the existing plugin catalog, restart Jellyfin when convenient, then reload the web client with **Ctrl + F5**.
 

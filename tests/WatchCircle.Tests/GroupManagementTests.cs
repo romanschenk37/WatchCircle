@@ -217,7 +217,7 @@ public class GroupManagementTests
         return group;
     }
 
-    private sealed class TestPlugin : Plugin
+    internal sealed class TestPlugin : Plugin
     {
         public TestPlugin()
             : base(CreatePaths(), Mock.Of<IXmlSerializer>())

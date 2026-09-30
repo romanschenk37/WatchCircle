@@ -1,7 +1,7 @@
 ---
 name: "WatchCircle"
 guid: "33f774e1-5cb2-4aca-a349-f6ec2bd82c7f"
-version: "1.0.4.0"
+version: "1.0.5.0"
 targetAbi: "12.0.0.0"
 framework: "net9.0"
 overview: "Your groups' watch progress at a glance"
@@ -13,5 +13,5 @@ owner: "romanschenk37"
 artifacts:
   - "Jellyfin.Plugin.WatchCircle.dll"
 changelog: |-
-  - Show all eligible group members in one shared progress card on movie and series detail pages.
-  - Keep one row per person who has started the title, including episode progress for series and seasons.
+  - Add optional Seerr request attribution with server-side URL and API key settings.
+  - Show all requesters independently of groups and playback, with requested seasons for series.

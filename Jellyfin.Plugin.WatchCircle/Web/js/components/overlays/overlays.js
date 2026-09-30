@@ -23,6 +23,8 @@
     let DETAIL_RETRY_MAX = 40;
     let pendingItemIds = new Set();
     let overlayCache = new Map();
+    let requesterCache = new Map();
+    let requesterPending = new Map();
     let fetchTimer = null;
     let detailRetryTimer = null;
     let detailScanTimer = null;
@@ -334,9 +336,38 @@
         return createDetailInitialAvatar(name);
     }
 
-    function renderSharedProgressCard(overlay) {
+    function renderSharedProgressCard(overlay, requesters) {
         let card = document.createElement('div');
         card.className = 'wc-shared-progress-card';
+
+        if (requesters.length) {
+            let attribution = document.createElement('div');
+            attribution.className = 'wc-request-attribution';
+            let heading = document.createElement('div');
+            heading.className = 'wc-request-heading';
+            heading.textContent = 'Requested by';
+            attribution.appendChild(heading);
+            let names = document.createElement('ul');
+            names.className = 'wc-request-names';
+            requesters.forEach(function (requester) {
+                let entry = document.createElement('li');
+                entry.textContent = requester.Name || requester.name || '';
+                let seasons = requester.Seasons || requester.seasons || [];
+                if (overlay.isSeries && seasons.length) {
+                    let detail = document.createElement('span');
+                    detail.className = 'wc-request-seasons';
+                    detail.textContent = ' · ' + (seasons.length === 1 ? 'Season ' : 'Seasons ') + seasons.join(', ');
+                    entry.appendChild(detail);
+                }
+                names.appendChild(entry);
+            });
+            attribution.appendChild(names);
+            card.appendChild(attribution);
+        }
+
+        if (!overlay.watchers.length) {
+            return card;
+        }
 
         let count = document.createElement('div');
         count.className = 'wc-shared-progress-count';
@@ -402,8 +433,9 @@
         delete mountPoint.dataset[DETAIL_MOUNT_DATA_ATTR];
 
         overlay = parseItemOverlay(overlay);
+        let requesters = requesterCache.get(normalizeGuid(itemId)) || [];
 
-        if (!overlay || !overlay.watchers || !overlay.watchers.length) {
+        if (!overlay.watchers.length && !requesters.length) {
             return false;
         }
 
@@ -423,7 +455,7 @@
         title.textContent = 'WatchCircle';
         section.appendChild(title);
 
-        section.appendChild(renderSharedProgressCard(overlay));
+        section.appendChild(renderSharedProgressCard(overlay, requesters));
 
         let insertAnchor = getDetailInsertAnchor(mountPoint);
         if (insertAnchor) {
@@ -441,6 +473,8 @@
         if (!itemId) {
             return true;
         }
+
+        queueDetailRequestersFetch(itemId);
 
         let mountPoint = findDetailMountPoint();
         if (!mountPoint) {
@@ -460,11 +494,8 @@
 
         let cached = overlayCache.get(normalizeGuid(itemId));
         if (cached) {
-            if (!cached.watchers || !cached.watchers.length) {
-                return true;
-            }
-
-            return renderDetailBuddiesSection(mountPoint, itemId, cached);
+            renderDetailBuddiesSection(mountPoint, itemId, cached);
+            return true;
         }
 
         if (!pendingItemIds.has(itemId)) {
@@ -472,6 +503,26 @@
         }
 
         return false;
+    }
+
+    function queueDetailRequestersFetch(itemId) {
+        let key = normalizeGuid(itemId);
+        if (requesterCache.has(key) || requesterPending.has(key) || !ApiClient.getCurrentUserId || !ApiClient.getCurrentUserId()) {
+            return;
+        }
+        let token = {};
+        requesterPending.set(key, token);
+        ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('WatchCircle/Seerr/Requests/' + encodeURIComponent(itemId)), dataType: 'json' })
+            .catch(function () { return []; })
+            .then(function (requesters) {
+                if (requesterPending.get(key) !== token) { return; }
+                requesterPending.delete(key);
+                requesterCache.set(key, Array.isArray(requesters) ? requesters : []);
+                if (normalizeGuid(getDetailsItemIdFromHash()) !== key) { return; }
+                let mountPoint = findDetailMountPoint();
+                if (mountPoint) { clearDetailBuddiesMountState(mountPoint); }
+                scheduleDetailBuddiesRetry(true);
+            });
     }
 
     function scheduleDetailBuddiesRetry(resetAttempts) {
@@ -623,6 +674,10 @@
 
         clearAllDetailBuddiesState();
 
+        requesterCache.delete(normalizeGuid(detailItemId));
+        requesterPending.delete(normalizeGuid(detailItemId));
+        queueDetailRequestersFetch(detailItemId);
+
         let fetchIds = [detailItemId];
         (itemIds || []).forEach(function (id) {
             if (id && normalizeGuid(id) !== normalizeGuid(detailItemId)) {
@@ -655,7 +710,7 @@
             }
 
             let overlay = overlayCache.get(normalizeGuid(detailItemId));
-            if (!overlay || !overlay.watchers || !overlay.watchers.length) {
+            if (!overlay) {
                 return;
             }
 
@@ -730,6 +785,8 @@
         scanDetailPage();
     });
     window.addEventListener('hashchange', function () {
+        requesterCache.clear();
+        requesterPending.clear();
         clearAllDetailBuddiesState();
         scheduleDetailBuddiesRetry(true);
     });

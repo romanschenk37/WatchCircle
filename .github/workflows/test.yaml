@@ -23,5 +23,5 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-      - name: Test group management
+      - name: Test plugin
         run: dotnet test tests/WatchCircle.Tests/WatchCircle.Tests.csproj --configuration Release

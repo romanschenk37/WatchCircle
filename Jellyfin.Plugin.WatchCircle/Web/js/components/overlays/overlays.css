@@ -82,6 +82,38 @@
     margin-bottom: 0.25rem;
 }
 
+.wc-request-attribution {
+    padding: 0.15rem 0 0.35rem;
+}
+
+.wc-request-attribution + .wc-shared-progress-count {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 0.85rem;
+    margin-top: 0.6rem;
+}
+
+.wc-request-heading {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-bottom: 0.45rem;
+}
+
+.wc-request-names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+}
+
+.wc-request-seasons {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
 .wc-shared-progress-members {
     list-style: none;
     padding: 0;

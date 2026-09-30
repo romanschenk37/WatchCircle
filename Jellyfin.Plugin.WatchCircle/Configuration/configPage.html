@@ -46,6 +46,40 @@
                             <p>Create your first group in the section above.</p>
                         </div>
                     </section>
+
+                    <section class="wc-section" aria-labelledby="wcSeerrTitle">
+                        <div class="wc-section-header">
+                            <div>
+                                <h2 id="wcSeerrTitle" class="wc-section-title">Seerr requests</h2>
+                                <p class="wc-section-subtitle">Optionally show who requested a movie or series. All requesters are shown, including people outside your groups and people who have not started watching.</p>
+                            </div>
+                        </div>
+                        <form id="seerrSettingsForm">
+                            <label class="emby-checkbox-label">
+                                <input is="emby-checkbox" id="seerrEnabled" type="checkbox" />
+                                <span>Show who requested this title in Seerr</span>
+                            </label>
+                            <div class="inputContainer" style="margin-top:1.25em">
+                                <label class="inputLabel" for="seerrUrl">Seerr URL</label>
+                                <input is="emby-input" id="seerrUrl" type="url" maxlength="1024" placeholder="http://seerr:5055" />
+                                <div class="fieldDescription">Use an address reachable from your Jellyfin server. A reverse-proxy subpath is supported.</div>
+                            </div>
+                            <div class="inputContainer">
+                                <label class="inputLabel" for="seerrApiKey">Seerr API key</label>
+                                <input is="emby-input" id="seerrApiKey" type="password" maxlength="512" autocomplete="new-password" />
+                                <div id="seerrKeyHelp" class="fieldDescription">Enter the API key from Seerr's general settings. Leave blank to keep a saved key.</div>
+                            </div>
+                            <label class="emby-checkbox-label">
+                                <input is="emby-checkbox" id="seerrClearKey" type="checkbox" />
+                                <span>Remove the saved API key</span>
+                            </label>
+                            <div class="wc-actions-bar">
+                                <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Save Seerr settings</span></button>
+                                <button is="emby-button" type="button" id="seerrTestButton" class="raised emby-button"><span>Save and test connection</span></button>
+                            </div>
+                            <p id="seerrStatus" class="wc-section-subtitle" role="status" aria-live="polite"></p>
+                        </form>
+                    </section>
                 </div>
 
                 <div id="groupDetailView" data-wc-hidden="true">
@@ -560,7 +594,7 @@
                                 WatchCircleConfig.users = users || [];
                             });
 
-                        return Promise.all([configPromise, usersPromise]);
+                        return Promise.all([configPromise, usersPromise, loadSeerrSettings()]);
                     })
                     .then(function () {
                         if (WatchCircleConfig.selectedGroupId) {
@@ -588,6 +622,64 @@
             }
 
             injectWatchCircleStyles();
+
+            function applySeerrSettings(settings) {
+                document.querySelector('#seerrEnabled').checked = !!(settings.Enabled || settings.enabled);
+                document.querySelector('#seerrUrl').value = settings.Url || settings.url || '';
+                document.querySelector('#seerrApiKey').value = '';
+                document.querySelector('#seerrClearKey').checked = false;
+                document.querySelector('#seerrKeyHelp').textContent = (settings.HasApiKey || settings.hasApiKey)
+                    ? 'An API key is saved. Leave blank to keep it. Enter the key again when changing the URL.'
+                    : 'No API key saved. Copy it from Seerr → Settings → General.';
+            }
+
+            function loadSeerrSettings() {
+                return ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('WatchCircle/Seerr/Settings'), dataType: 'json' })
+                    .then(applySeerrSettings)
+                    .catch(function () { document.querySelector('#seerrStatus').textContent = 'Could not load Seerr settings.'; });
+            }
+
+            var seerrSaving = false;
+            function saveSeerrSettings(testConnection) {
+                if (seerrSaving) { return; }
+                var form = document.querySelector('#seerrSettingsForm');
+                if (!form.reportValidity()) { return; }
+                var payload = {
+                    Enabled: document.querySelector('#seerrEnabled').checked,
+                    Url: document.querySelector('#seerrUrl').value.trim(),
+                    ApiKey: document.querySelector('#seerrApiKey').value,
+                    ClearApiKey: document.querySelector('#seerrClearKey').checked
+                };
+                seerrSaving = true;
+                form.querySelectorAll('input, button').forEach(function (control) { control.disabled = true; });
+                var status = document.querySelector('#seerrStatus');
+                status.textContent = 'Saving…';
+                ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('WatchCircle/Seerr/Settings'), contentType: 'application/json', dataType: 'json', data: JSON.stringify(payload) })
+                    .then(function (settings) {
+                        applySeerrSettings(settings);
+                        status.textContent = 'Seerr settings saved.';
+                        if (testConnection) {
+                            status.textContent = 'Settings saved. Testing connection…';
+                            return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('WatchCircle/Seerr/Test'), dataType: 'json' })
+                                .then(function (connected) {
+                                    status.textContent = connected ? 'Connected to Seerr successfully.' : 'Settings saved, but the connection failed. Check the URL, API key and network access from Jellyfin.';
+                                });
+                        }
+                    })
+                    .catch(function () {
+                        status.textContent = 'Could not save or test Seerr settings. Check the URL and API key. Enter the key again when changing the URL; disable the integration before removing it.';
+                    })
+                    .finally(function () {
+                        seerrSaving = false;
+                        form.querySelectorAll('input, button').forEach(function (control) { control.disabled = false; });
+                    });
+            }
+
+            document.querySelector('#seerrSettingsForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                saveSeerrSettings(false);
+            });
+            document.querySelector('#seerrTestButton').addEventListener('click', function () { saveSeerrSettings(true); });
 
             document.querySelector('#WatchCircleConfigPage')
                 .addEventListener('pageshow', function () {
