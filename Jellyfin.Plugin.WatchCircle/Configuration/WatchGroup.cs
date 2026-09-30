@@ -30,6 +30,11 @@ public class WatchGroup
     public string Name { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether newly created Jellyfin users join this group.
+    /// </summary>
+    public bool AutoAddNewUsers { get; set; }
+
+    /// <summary>
     /// Gets or sets the Jellyfin user IDs that belong to this group.
     /// </summary>
     [SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "Required for plugin XML configuration serialization.")]

@@ -3,7 +3,7 @@
 ![WatchCircle](./thumbnail.svg)
 
 > [!NOTE]
-> WatchCircle is under development. This first step establishes its own name and plugin identity. The inherited features documented below are still present; the planned single progress card, automatic group membership and removal of Watch together are not implemented yet.
+> WatchCircle is under development. Automatic membership for newly created Jellyfin users is available per group. The inherited features documented below are still present; the planned single progress card and removal of Watch together are not implemented yet.
 
 ## About
 
@@ -21,7 +21,7 @@ Use it to plan the next watch session: browse a library, open a movie or season,
 
 ## Installation
 
-The first [WatchCircle test release, 1.0.2.0](https://github.com/romanschenk37/WatchCircle/releases/tag/v1.0.2.0), is available for installation through Jellyfin's plugin catalog. The catalog contains WatchCircle packages only.
+WatchCircle test releases are available through [GitHub Releases](https://github.com/romanschenk37/WatchCircle/releases) and Jellyfin's plugin catalog. The catalog contains WatchCircle packages only.
 
 1. Open **Dashboard → Plugins → Manage Repositories** and add a new one:
    - Name: `WatchCircle`
@@ -30,7 +30,7 @@ The first [WatchCircle test release, 1.0.2.0](https://github.com/romanschenk37/W
 3. Select **WatchCircle** and install it.
 4. After installation you must restart the server to enable the plugin (**Dashboard → Restart**).
 
-For the first test on Jellyfin 12.1, disable Binge Buddy and refresh the web client after restarting. WatchCircle still has the inherited feature set described below; the shared progress card and automatic group membership will follow in later versions.
+For the first test on Jellyfin 12.1, disable Binge Buddy and refresh the web client after restarting. Runtime verification on a Jellyfin server is still pending. WatchCircle still has the inherited progress display described below; the shared progress card will follow in a later version.
 
 ## How It Works
 
@@ -38,12 +38,16 @@ For the first test on Jellyfin 12.1, disable Binge Buddy and refresh the web cli
 
 A **group** is a named list of Jellyfin users on your server (for example, “Friday Night Crew” or “Roommates”). Groups are stored in the plugin configuration and managed from the dashboard.
 
-- Any **administrator** can create, rename, or delete groups.
+- Any **administrator** can create, manage, or delete groups.
 - Each group has a **name** and a set of **members** selected from existing Jellyfin accounts.
+- Each group can **automatically add new users**. This is off by default and applies only to Jellyfin accounts created after the setting is saved. Existing users are not added retroactively.
+- Turning automatic membership off keeps current members. Manually removed members stay removed when other users join or Jellyfin restarts.
 - Members are stored by user ID, not username, so renames on the server do not break membership.
 - A user can belong to multiple groups. When overlays are built, members from all of your groups are combined and deduplicated.
 
 Groups do **not** change Jellyfin permissions or libraries. They only define which users WatchCircle treats as your “buddies” for progress display.
+
+Automatic membership listens to Jellyfin's user-created event and saves the new member in the existing group configuration. It does not create a separate user database or collect any watch data. Saving an open group editor preserves users added automatically in the meantime.
 
 ### What counts as “started”
 
@@ -138,6 +142,7 @@ After validation, the web UI refreshes **poster overlays**, **WatchCircle** deta
 
 - Create and manage watch groups from the plugin settings page
 - Pick members with checkboxes and profile avatars
+- Automatically add newly created Jellyfin users to selected groups
 - Avatar stacks on **movie**, **episode**, **season**, and **show** posters in the web client
 - **WatchCircle** detail cards on **movie**, **season**, and **series** pages
 - Side-by-side **You / Them** progress with time watched, percentage, and Jellyfin **Finished** state
@@ -154,10 +159,11 @@ After validation, the web UI refreshes **poster overlays**, **WatchCircle** deta
 3. **Create a group**
    - Enter a name (for example, `Friday Night Crew`).
    - Click **Create group**.
-4. **Add members**
+4. **Configure members**
    - Click **Manage group →** on the group card.
    - Check the Jellyfin users who should be in the group.
-   - Click **Save members**.
+   - Optionally enable **Automatically add new users** for future accounts.
+   - Click **Save group**.
 5. Repeat for any other groups you need.
 
 Each server user who should see overlays and cards must be included in at least one group with the people they watch with. Users who are not in any group with you will not appear on your UI, and you will not appear on theirs.
@@ -192,6 +198,12 @@ If overlays or cards do not show up after an update, try a hard refresh (**Ctrl 
 Jellyfin lists the plugin as **WatchCircle**. Its plugin ID is `33f774e1-5cb2-4aca-a349-f6ec2bd82c7f`. WatchCircle uses its own configuration and `/WatchCircle` API routes; existing Binge Buddy group settings are not imported automatically.
 
 Plugin metadata for catalog builds is defined in [`build.yaml`](./build.yaml).
+
+Run the group management regression tests with:
+
+```bash
+dotnet test tests/WatchCircle.Tests/WatchCircle.Tests.csproj --configuration Release
+```
 
 ## Publishing a release
 

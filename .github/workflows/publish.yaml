@@ -38,6 +38,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Test group management
+        run: dotnet test tests/WatchCircle.Tests/WatchCircle.Tests.csproj --configuration Release
+
       - name: Build plugin
         run: dotnet publish Jellyfin.Plugin.WatchCircle/Jellyfin.Plugin.WatchCircle.csproj --configuration Release --output bin
 

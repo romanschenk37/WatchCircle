@@ -18,8 +18,6 @@ internal static class WatchTogetherProgressRules
     /// </summary>
     internal const long MinimumApprovalWatchTicks = TimeSpan.TicksPerSecond * 10;
 
-    private static readonly object SyncRoot = new();
-
     /// <summary>
     /// Executes an action while holding the watch-together configuration lock.
     /// </summary>
@@ -28,10 +26,7 @@ internal static class WatchTogetherProgressRules
     {
         ArgumentNullException.ThrowIfNull(action);
 
-        lock (SyncRoot)
-        {
-            action();
-        }
+        PluginConfigurationLock.Run(action);
     }
 
     /// <summary>
@@ -44,10 +39,7 @@ internal static class WatchTogetherProgressRules
     {
         ArgumentNullException.ThrowIfNull(action);
 
-        lock (SyncRoot)
-        {
-            return action();
-        }
+        return PluginConfigurationLock.Run(action);
     }
 
     /// <summary>

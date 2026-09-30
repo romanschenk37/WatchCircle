@@ -60,16 +60,23 @@
                         <div class="wc-section-header">
                             <div>
                                 <h2 id="wcMembersSectionTitle" class="wc-section-title">Members</h2>
-                                <p class="wc-section-subtitle">Check the users who belong to this group. New server users appear here unchecked.</p>
+                                <p class="wc-section-subtitle">Choose the members and whether new Jellyfin accounts should join automatically.</p>
                             </div>
                         </div>
 
                         <form id="groupMembersForm">
+                            <div class="wc-auto-add-setting">
+                                <label class="emby-checkbox-label">
+                                    <input is="emby-checkbox" type="checkbox" id="autoAddNewUsers" aria-describedby="autoAddNewUsersHelp" />
+                                    <span>Automatically add new users</span>
+                                </label>
+                                <p id="autoAddNewUsersHelp" class="wc-section-subtitle">Applies to Jellyfin accounts created after you save this setting. Existing accounts stay unchanged. Turning it off keeps current members.</p>
+                            </div>
                             <div id="usersList" class="wc-user-select wc-users-list checkboxListContainer"></div>
 
                             <div class="wc-actions-bar">
                                 <button is="emby-button" type="submit" class="raised button-submit emby-button">
-                                    <span>Save members</span>
+                                    <span>Save group</span>
                                 </button>
                                 <div class="wc-danger-zone">
                                     <button is="emby-button" type="button" id="deleteGroupButton" class="raised emby-button wc-danger-button">
@@ -111,6 +118,11 @@
                     '    margin-bottom: 1.75rem;',
                     '    line-height: 1.5;',
                     '    color: var(--wc-text-muted);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-auto-add-setting {',
+                    '    margin-bottom: 1.25rem;',
+                    '    padding-bottom: 1rem;',
+                    '    border-bottom: 1px solid var(--wc-border);',
                     '}',
                     '#WatchCircleConfigPage .wc-section {',
                     '    margin-bottom: 2rem;',
@@ -277,7 +289,6 @@
             }
 
             var WatchCircleConfig = {
-                pluginUniqueId: '33f774e1-5cb2-4aca-a349-f6ec2bd82c7f',
                 config: null,
                 users: [],
                 selectedGroupId: null,
@@ -299,15 +310,9 @@
                 return {
                     Id: group.Id || group.id,
                     Name: group.Name || group.name || '',
-                    MemberUserIds: group.MemberUserIds || group.memberUserIds || []
+                    MemberUserIds: group.MemberUserIds || group.memberUserIds || [],
+                    AutoAddNewUsers: (group.AutoAddNewUsers !== undefined ? group.AutoAddNewUsers : group.autoAddNewUsers) === true
                 };
-            }
-
-            function normalizeConfig(config) {
-                var rawGroups = config.Groups || config.groups || [];
-                config.Groups = rawGroups.map(normalizeGroup);
-                delete config.groups;
-                return config;
             }
 
             function getGroups() {
@@ -352,18 +357,6 @@
                 return (value || '').toString().toLowerCase();
             }
 
-            function createGuid() {
-                if (window.crypto && crypto.randomUUID) {
-                    return crypto.randomUUID();
-                }
-
-                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
-                    var random = Math.random() * 16 | 0;
-                    var value = character === 'x' ? random : ((random & 0x3) | 0x8);
-                    return value.toString(16);
-                });
-            }
-
             function getGroupById(groupId) {
                 return getGroups().find(function (group) {
                     return normalizeGuid(group.Id) === normalizeGuid(groupId);
@@ -400,6 +393,7 @@
                 setBbVisible(document.querySelector('#groupDetailView'), true);
                 setBbVisible(document.querySelector('#wcPageIntro'), false);
                 updateDetailTitle(group);
+                document.querySelector('#autoAddNewUsers').checked = group.AutoAddNewUsers;
                 renderUsersList(group);
             }
 
@@ -446,6 +440,10 @@
                     badge.textContent = memberCountLabel(getMemberCount(group));
 
                     meta.appendChild(badge);
+                    var autoAddBadge = document.createElement('span');
+                    autoAddBadge.className = 'wc-badge';
+                    autoAddBadge.textContent = group.AutoAddNewUsers ? 'Auto-add: on' : 'Auto-add: off';
+                    meta.appendChild(autoAddBadge);
                     body.appendChild(name);
                     body.appendChild(meta);
 
@@ -494,35 +492,37 @@
             }
 
             function reloadConfiguration() {
-                return ApiClient.getPluginConfiguration(WatchCircleConfig.pluginUniqueId)
-                    .then(function (config) {
-                        WatchCircleConfig.config = normalizeConfig(config || {});
+                return ApiClient.ajax({
+                    type: 'GET',
+                    url: ApiClient.getUrl('WatchCircle/Groups'),
+                    dataType: 'json'
+                })
+                    .then(function (groups) {
+                        WatchCircleConfig.config = { Groups: (groups || []).map(normalizeGroup) };
                         return WatchCircleConfig.config;
                     });
             }
 
-            function saveConfiguration(applyChanges, onSuccess) {
+            function saveGroupRequest(method, path, payload, onSuccess) {
                 WatchCircleConfig.saveQueue = WatchCircleConfig.saveQueue
                     .catch(function () { })
                     .then(function () {
                         setSavingState(true);
                         Dashboard.showLoadingMsg();
 
-                        return ApiClient.getPluginConfiguration(WatchCircleConfig.pluginUniqueId)
-                            .then(function (config) {
-                                config = normalizeConfig(config || {});
-
-                                if (typeof applyChanges === 'function') {
-                                    applyChanges(config);
-                                }
-
-                                delete config.groups;
-                                WatchCircleConfig.config = config;
-
-                                return ApiClient.updatePluginConfiguration(WatchCircleConfig.pluginUniqueId, config);
-                            })
+                        return ApiClient.ajax({
+                            type: method,
+                            url: ApiClient.getUrl(path),
+                            contentType: 'application/json',
+                            data: payload ? JSON.stringify(payload) : undefined
+                        })
                             .then(function (result) {
-                                return reloadConfiguration().then(function () {
+                                return Promise.all([
+                                    reloadConfiguration(),
+                                    WatchCircleUserSelect.loadUsers().then(function (users) {
+                                        WatchCircleConfig.users = users || [];
+                                    })
+                                ]).then(function () {
                                     return result;
                                 });
                             })
@@ -553,10 +553,7 @@
 
                 ensureUserSelectModule()
                     .then(function () {
-                        var configPromise = ApiClient.getPluginConfiguration(WatchCircleConfig.pluginUniqueId)
-                            .then(function (config) {
-                                WatchCircleConfig.config = normalizeConfig(config || {});
-                            });
+                        var configPromise = reloadConfiguration();
 
                         var usersPromise = WatchCircleUserSelect.loadUsers()
                             .then(function (users) {
@@ -623,15 +620,7 @@
                         return;
                     }
 
-                    var newGroup = {
-                        Id: createGuid(),
-                        Name: name,
-                        MemberUserIds: []
-                    };
-
-                    saveConfiguration(function (config) {
-                        config.Groups.push(newGroup);
-                    }, function () {
+                    saveGroupRequest('POST', 'WatchCircle/Groups', { Name: name }, function () {
                         nameInput.value = '';
                         showListView();
                         renderGroupsGrid();
@@ -662,6 +651,10 @@
                 .addEventListener('submit', function (event) {
                     event.preventDefault();
 
+                    if (WatchCircleConfig.isSaving) {
+                        return false;
+                    }
+
                     var group = getGroupById(WatchCircleConfig.selectedGroupId);
                     if (!group) {
                         return false;
@@ -669,21 +662,21 @@
 
                     var groupId = group.Id;
                     var selectedUserIds = WatchCircleUserSelect.getSelectedUserIds(document.querySelector('#usersList'));
+                    var selectedIds = new Set(selectedUserIds.map(normalizeGuid));
+                    var originalIds = new Set(group.MemberUserIds.map(normalizeGuid));
+                    var displayedIds = new Set(WatchCircleConfig.users.map(function (user) { return normalizeGuid(user.Id); }));
+                    var request = {
+                        AddedUserIds: selectedUserIds.filter(function (id) { return !originalIds.has(normalizeGuid(id)); }),
+                        RemovedUserIds: group.MemberUserIds.filter(function (id) {
+                            return displayedIds.has(normalizeGuid(id)) && !selectedIds.has(normalizeGuid(id));
+                        }),
+                        AutoAddNewUsers: document.querySelector('#autoAddNewUsers').checked
+                    };
 
-                    saveConfiguration(function (config) {
-                        var targetGroup = (config.Groups || []).find(function (item) {
-                            return normalizeGuid(item.Id) === normalizeGuid(groupId);
-                        });
-
-                        if (!targetGroup) {
-                            throw new Error('Group not found');
-                        }
-
-                        targetGroup.MemberUserIds = selectedUserIds;
-                    }, function () {
+                    saveGroupRequest('POST', 'WatchCircle/Groups/' + encodeURIComponent(groupId), request, function () {
                         var updatedGroup = getGroupById(groupId);
                         if (updatedGroup) {
-                            updateDetailTitle(updatedGroup);
+                            showDetailView(updatedGroup.Id);
                         }
                         renderGroupsGrid();
                     });
@@ -709,11 +702,7 @@
                                 return;
                             }
 
-                            saveConfiguration(function (config) {
-                                config.Groups = (config.Groups || []).filter(function (item) {
-                                    return normalizeGuid(item.Id) !== normalizeGuid(groupIdToDelete);
-                                });
-                            }, function () {
+                            saveGroupRequest('DELETE', 'WatchCircle/Groups/' + encodeURIComponent(groupIdToDelete), null, function () {
                                 showListView();
                                 renderGroupsGrid();
                             });

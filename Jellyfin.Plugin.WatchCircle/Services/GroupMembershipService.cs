@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Jellyfin.Plugin.WatchCircle.Abstractions;
+using Jellyfin.Plugin.WatchCircle.Configuration;
 
 namespace Jellyfin.Plugin.WatchCircle.Services;
 
@@ -12,6 +13,11 @@ public class GroupMembershipService : IGroupMembershipService
 {
     /// <inheritdoc />
     public IReadOnlyList<Guid> GetVisibleMemberIds(Guid currentUserId)
+    {
+        return PluginConfigurationLock.Run(() => ResolveVisibleMemberIds(currentUserId));
+    }
+
+    private static IReadOnlyList<Guid> ResolveVisibleMemberIds(Guid currentUserId)
     {
         var configuration = Plugin.Instance?.Configuration;
         if (configuration?.Groups is null || configuration.Groups.Count == 0)

@@ -16,3 +16,12 @@ on:
 jobs:
   call:
     uses: jellyfin/jellyfin-meta-plugins/.github/workflows/test.yaml@master
+  group-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Test group management
+        run: dotnet test tests/WatchCircle.Tests/WatchCircle.Tests.csproj --configuration Release
