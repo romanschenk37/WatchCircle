@@ -185,7 +185,8 @@
             playbackPositionTicks: progress.playbackPositionTicks,
             seasonIndexNumber: progress.seasonIndexNumber,
             episodeIndexNumber: progress.episodeIndexNumber,
-            episodeRunTimeTicks: progress.episodeRunTimeTicks
+            episodeRunTimeTicks: progress.episodeRunTimeTicks,
+            aggregate: progress.aggregate
         };
     }
 
@@ -409,21 +410,8 @@
                     progress: watcher,
                     runTimeTicks: runtime,
                     variant: 'them',
-                    showEpisodeLine: isEpisodeScoped,
-                    statusText: isEpisodeScoped && watcher.played ? t("Episode finished") : undefined
+                    showEpisodeLine: isEpisodeScoped
                 });
-                let track = progress.querySelector('.wc-detail-progress-track');
-                track.setAttribute('role', 'progressbar');
-                track.setAttribute('aria-label', name);
-                track.setAttribute('aria-valuemin', '0');
-                track.setAttribute('aria-valuemax', '100');
-                track.setAttribute('aria-valuenow', String(watchProgress.getProgressPercent(
-                    watcher.played, watcher.playbackPositionTicks, runtime)));
-                track.setAttribute('aria-valuetext', [
-                    isEpisodeScoped ? watchProgress.formatEpisodeLine(watcher) : '',
-                    isEpisodeScoped && watcher.played ? t("Episode finished") : watchProgress.formatProgressStatus(
-                        watcher.played, watcher.playbackPositionTicks, runtime)
-                ].filter(Boolean).join(', '));
                 row.appendChild(progress);
             } else {
                 let label = document.createElement('span');

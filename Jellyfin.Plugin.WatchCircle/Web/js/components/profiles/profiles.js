@@ -45,15 +45,9 @@
         const runtime = helper.getProgressRuntime(parsed, field(progress, 'RuntimeTicks'));
         let status;
         if (!field(progress, 'Started')) status = t('Not started');
-        else if (series && parsed.played) status = t('Episode finished');
         const row = helper.createRow({ labelText: label, progress: raw, runTimeTicks: runtime,
-            variant: own ? 'you' : 'them', showEpisodeLine: series, statusText: status });
+            variant: own ? 'you' : 'them', showEpisodeLine: series, statusText: status, aggregate: series ? progress : null });
         row.classList.add('wc-profile-progress');
-        const track = row.querySelector('.wc-detail-progress-track');
-        track.setAttribute('role', 'progressbar'); track.setAttribute('aria-label', label);
-        track.setAttribute('aria-valuemin', '0'); track.setAttribute('aria-valuemax', '100');
-        track.setAttribute('aria-valuenow', String(helper.getProgressPercent(parsed.played, parsed.playbackPositionTicks, runtime)));
-        track.setAttribute('aria-valuetext', [helper.formatEpisodeLine(parsed), status || helper.formatProgressStatus(parsed.played, parsed.playbackPositionTicks, runtime)].filter(Boolean).join(', '));
         return row;
     }
 
@@ -331,7 +325,7 @@
             const intro = element('div', 'wc-profile-intro');
             const copy = element('div');
             copy.appendChild(element('p', 'wc-profile-legend', t("{name} compared with you", { name: field(selectedUser, 'Name') })));
-            copy.appendChild(element('p', 'wc-profile-subtitle', t("Series: position in the furthest started episode. Completed means all available episodes, including specials, have been watched.")));
+            copy.appendChild(element('p', 'wc-profile-subtitle', t("Series progress includes all available episodes and specials; partial episodes count proportionally. The episode shown is the furthest started, not the next episode.")));
             intro.appendChild(avatar(selectedUser)); intro.appendChild(copy); body.appendChild(intro);
             collections.forEach(collection => {
                 const items = profileItems.filter(item => field(item, 'Category') === collection.category && field(item, 'Type') === collection.type);

@@ -5,7 +5,6 @@ using Jellyfin.Database.Implementations;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.WatchCircle.Abstractions;
 using Jellyfin.Plugin.WatchCircle.Api;
-using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -89,14 +88,23 @@ public class ItemWatchProgressService : IItemWatchProgressService
             var watcherProgress = progress?.Watchers.Values.ToList() ?? new List<MemberWatchProgress>();
 
             var watchers = watcherProgress
-                .Select(memberProgress => _userProfileService.MapWatcher(
-                    memberProgress.UserId,
-                    memberProgress.Played,
-                    memberProgress.PlaybackPositionTicks,
-                    OverlayAvatarSize,
-                    memberProgress.EpisodeIndexNumber,
-                    memberProgress.EpisodeRunTimeTicks,
-                    memberProgress.SeasonIndexNumber))
+                .Select(memberProgress =>
+                {
+                    var watcher = _userProfileService.MapWatcher(
+                        memberProgress.UserId,
+                        memberProgress.Played,
+                        memberProgress.PlaybackPositionTicks,
+                        OverlayAvatarSize,
+                        memberProgress.EpisodeIndexNumber,
+                        memberProgress.EpisodeRunTimeTicks,
+                        memberProgress.SeasonIndexNumber);
+                    if (watcher is not null)
+                    {
+                        watcher.Aggregate = memberProgress.Aggregate;
+                    }
+
+                    return watcher;
+                })
                 .Where(watcher => watcher is not null)
                 .Select(watcher => watcher!)
                 .OrderBy(watcher => watcher.Name, StringComparer.OrdinalIgnoreCase)
@@ -153,11 +161,6 @@ public class ItemWatchProgressService : IItemWatchProgressService
         }
 
         var progressItemIds = progressItemToOverlayIds.Keys.ToList();
-        if (progressItemIds.Count == 0)
-        {
-            return itemContexts.Keys.ToDictionary(itemId => itemId, _ => new ItemProgressSnapshot());
-        }
-
         var rows = context.UserData
             .AsNoTracking()
             .Where(userData => progressItemIds.Contains(userData.ItemId) && trackedUserIds.Contains(userData.UserId))
@@ -166,6 +169,41 @@ public class ItemWatchProgressService : IItemWatchProgressService
         var snapshots = itemContexts.Keys.ToDictionary(
             itemId => itemId,
             _ => new ItemProgressSnapshot());
+
+        var userRows = trackedUserIds.ToDictionary(userId => userId, userId => rows.Where(row => row.UserId == userId).ToLookup(row => row.ItemId));
+        foreach (var (itemId, overlayContext) in itemContexts.Where(pair => pair.Value.IsSeason || pair.Value.IsSeries))
+        {
+            var snapshot = snapshots[itemId];
+            foreach (var userId in trackedUserIds)
+            {
+                var aggregate = TitleProgressCalculator.Calculate(overlayContext.Episodes, userRows[userId], episodic: true);
+                var episode = aggregate.Episode ?? new WatchProgressDto();
+                if (userId == currentUserId)
+                {
+                    // Keep the nested episode separate to avoid a cyclic DTO graph.
+                    snapshot.CurrentUser = new WatchProgressDto
+                    {
+                        Played = episode.Played,
+                        PlaybackPositionTicks = episode.PlaybackPositionTicks,
+                        SeasonIndexNumber = episode.SeasonIndexNumber,
+                        EpisodeIndexNumber = episode.EpisodeIndexNumber,
+                        EpisodeRunTimeTicks = episode.EpisodeRunTimeTicks,
+                        Aggregate = aggregate
+                    };
+                }
+                else if (aggregate.Started)
+                {
+                    snapshot.Watchers[userId] = new MemberWatchProgress(
+                        userId,
+                        episode.Played,
+                        episode.PlaybackPositionTicks,
+                        episode.SeasonIndexNumber,
+                        episode.EpisodeIndexNumber,
+                        episode.EpisodeRunTimeTicks,
+                        aggregate);
+                }
+            }
+        }
 
         foreach (var row in rows)
         {
@@ -188,7 +226,6 @@ public class ItemWatchProgressService : IItemWatchProgressService
 
                 if (overlayContext.IsSeason || overlayContext.IsSeries)
                 {
-                    ApplyEpisodeAggregateRow(snapshot, row, overlayContext, currentUserId);
                     continue;
                 }
 
@@ -218,49 +255,6 @@ public class ItemWatchProgressService : IItemWatchProgressService
         }
 
         return snapshots;
-    }
-
-    private static void ApplyEpisodeAggregateRow(
-        ItemProgressSnapshot snapshot,
-        UserData row,
-        OverlayItemContext overlayContext,
-        Guid currentUserId)
-    {
-        if (!overlayContext.EpisodeMetadataById.TryGetValue(row.ItemId, out var episodeMetadata))
-        {
-            return;
-        }
-
-        if (row.UserId == currentUserId)
-        {
-            if (!HasStartedWatching(row))
-            {
-                return;
-            }
-
-            snapshot.CurrentUser = MergeEpisodeWatchProgress(
-                snapshot.CurrentUser,
-                MapEpisodeWatchProgress(row, episodeMetadata, overlayContext.IsSeries),
-                overlayContext.IsSeries);
-            return;
-        }
-
-        if (!HasStartedWatching(row))
-        {
-            return;
-        }
-
-        var incoming = new MemberWatchProgress(
-            row.UserId,
-            row.Played,
-            row.PlaybackPositionTicks,
-            overlayContext.IsSeries ? episodeMetadata.SeasonIndexNumber : null,
-            episodeMetadata.IndexNumber,
-            episodeMetadata.RunTimeTicks);
-
-        snapshot.Watchers[row.UserId] = snapshot.Watchers.TryGetValue(row.UserId, out var existing)
-            ? MergeEpisodeMemberProgress(existing, incoming, overlayContext.IsSeries)
-            : incoming;
     }
 
     private bool TryResolveOverlayItem(
@@ -312,13 +306,13 @@ public class ItemWatchProgressService : IItemWatchProgressService
         if (resolvedItem is Season season)
         {
             item = season;
-            var episodes = GetSeasonEpisodes(season, currentUserId);
+            var episodes = GetAvailableEpisodes(season.Id, currentUserId);
             context = new OverlayItemContext
             {
                 IsSeason = true,
                 RunTimeTicks = 0,
                 ProgressItemIds = episodes.Select(episode => episode.Id).ToList(),
-                EpisodeMetadataById = BuildEpisodeMetadata(episodes)
+                Episodes = episodes
             };
             return true;
         }
@@ -326,13 +320,13 @@ public class ItemWatchProgressService : IItemWatchProgressService
         if (resolvedItem is Series series)
         {
             item = series;
-            var episodes = GetSeriesEpisodes(series, currentUserId);
+            var episodes = GetAvailableEpisodes(series.Id, currentUserId);
             context = new OverlayItemContext
             {
                 IsSeries = true,
                 RunTimeTicks = 0,
                 ProgressItemIds = episodes.Select(episode => episode.Id).ToList(),
-                EpisodeMetadataById = BuildEpisodeMetadata(episodes, includeSeasonNumber: true)
+                Episodes = episodes
             };
             return true;
         }
@@ -340,18 +334,10 @@ public class ItemWatchProgressService : IItemWatchProgressService
         return false;
     }
 
-    private List<BaseItem> GetSeriesEpisodes(Series series, Guid userId)
+    private IReadOnlyList<BaseItem> GetAvailableEpisodes(Guid parentId, Guid userId)
     {
         var user = _userManager.GetUserById(userId);
-        return series.GetEpisodes(user, new DtoOptions(true), shouldIncludeMissingEpisodes: true)
-            .Cast<BaseItem>()
-            .ToList();
-    }
-
-    private List<BaseItem> GetSeasonEpisodes(Season season, Guid userId)
-    {
-        var user = _userManager.GetUserById(userId);
-        return season.GetEpisodes(user, new DtoOptions(true), shouldIncludeMissingEpisodes: true);
+        return user is null ? Array.Empty<BaseItem>() : TitleProgressCalculator.GetAvailableEpisodes(_libraryManager, user, parentId);
     }
 
     internal static WatchProgressDto? GetFurthestEpisodeProgress(IReadOnlyList<BaseItem> episodes, ILookup<Guid, UserData> rows)
@@ -395,7 +381,7 @@ public class ItemWatchProgressService : IItemWatchProgressService
 
     private static int? ResolveSeasonNumber(BaseItem episode)
     {
-        if (episode is Episode tvEpisode && tvEpisode.ParentIndexNumber is > 0)
+        if (episode is Episode tvEpisode && tvEpisode.ParentIndexNumber is >= 0)
         {
             return tvEpisode.ParentIndexNumber.Value;
         }
@@ -440,43 +426,6 @@ public class ItemWatchProgressService : IItemWatchProgressService
     private static WatchProgressDto MergeEpisodeWatchProgress(
         WatchProgressDto existing,
         WatchProgressDto incoming,
-        bool compareSeason)
-    {
-        var comparison = CompareEpisodePosition(
-            existing.SeasonIndexNumber,
-            existing.EpisodeIndexNumber,
-            incoming.SeasonIndexNumber,
-            incoming.EpisodeIndexNumber,
-            compareSeason);
-
-        if (comparison < 0)
-        {
-            return incoming;
-        }
-
-        if (comparison > 0)
-        {
-            return existing;
-        }
-
-        if (incoming.Played)
-        {
-            return incoming;
-        }
-
-        if (existing.Played)
-        {
-            return existing;
-        }
-
-        return incoming.PlaybackPositionTicks > existing.PlaybackPositionTicks
-            ? incoming
-            : existing;
-    }
-
-    private static MemberWatchProgress MergeEpisodeMemberProgress(
-        MemberWatchProgress existing,
-        MemberWatchProgress incoming,
         bool compareSeason)
     {
         var comparison = CompareEpisodePosition(
@@ -580,7 +529,8 @@ public class ItemWatchProgressService : IItemWatchProgressService
         long PlaybackPositionTicks,
         int? SeasonIndexNumber,
         int? EpisodeIndexNumber,
-        long EpisodeRunTimeTicks);
+        long EpisodeRunTimeTicks,
+        LibraryProgressDto? Aggregate = null);
 
     private sealed class OverlayItemContext
     {
@@ -592,7 +542,7 @@ public class ItemWatchProgressService : IItemWatchProgressService
 
         public IReadOnlyList<Guid> ProgressItemIds { get; init; } = Array.Empty<Guid>();
 
-        public Dictionary<Guid, EpisodeMetadata> EpisodeMetadataById { get; init; } = new();
+        public IReadOnlyList<BaseItem> Episodes { get; init; } = Array.Empty<BaseItem>();
     }
 
     private sealed class ItemProgressSnapshot

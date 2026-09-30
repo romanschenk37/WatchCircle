@@ -76,9 +76,9 @@ Every title includes the person's progress and **Du (You)** for comparison, even
 
 Use **Left/Right** to move within a poster row and **Up/Down** to change rows or reach their headings, **OK/Enter** to open a title or collection, and **Back/Escape** to return. Focus has a strong visible border and the view scrolls it into sight. Each row previews up to 24 titles; its **clickable heading** opens a grid with all remaining titles available in batches of 48. Returning restores the selected row, focus and scroll position. The people directory focuses a person first, so a remote does not automatically open a text keyboard.
 
-Profile cards use the **same progress display as detail pages**: season and episode for each person's furthest started episode, its watched duration and percentage, or “Episode finished.” Movies show their own playback position. Unknown runtimes show watched duration without inventing a percentage.
+Profile cards use the **same progress display as detail pages**: series show completed episode counts and an overall percentage/bar, for example “6 of 12 episodes completed (54%).” Partly watched episodes contribute proportionally. A separate season/episode line identifies the furthest started episode as **Started** or **Watched**; it never predicts the next episode. Movies show their own playback position. Unknown runtimes show watched duration without inventing a percentage.
 
-A series belongs to Completed only when **all available episodes visible to the viewer, including specials**, are played. Missing/virtual episodes are excluded. Finishing a single episode does not complete the series. Completed means **up to date**, not that no future seasons will be released; new available episodes can move a series back into Started. This category calculation is separate from the displayed episode progress.
+A series belongs to Completed only when **all available episodes visible to the viewer, including specials**, are played. Missing/virtual episodes are excluded. Finishing a single episode does not complete the series, and skipped episodes are not assumed watched. Completed means **up to date**, not that no future seasons will be released; new available episodes can move a series back into Started. Detail pages and profiles use the same available-episode set and progress calculation. Unknown episode runtimes contribute no partial fraction until marked played; only a fully completed series or season displays 100%.
 
 ### Settings and display language
 
@@ -119,29 +119,29 @@ Display rules:
 
 Poster overlays require the **web UI**. Mobile and TV apps do not load the injected client script.
 
-### Detail page cards (movies, seasons & series)
+### Detail page cards (movies, episodes, seasons & series)
 
-On **movie**, **season**, and **series** detail pages, WatchCircle injects a **WatchCircle** section with one shared card for all group mates who have started the title (or any episode in the season or show).
+On **movie**, **episode**, **season**, and **series** detail pages, WatchCircle injects a **WatchCircle** section with one shared card for all group mates who have started the title (or any episode in the season or show).
 
 Each person gets one row, ordered by username, with:
 
 - Their **avatar** and **username**
-- A status line, for example `45m 3s watched (86%)`, `1h 45m 13s watched (86%)`, or **`Finished`**
+- A status line, for example `45m 3s watched (86%)` for a movie/episode, or `6 of 12 episodes completed (54%)` for a series/season
 - A rounded **coral progress bar**
 
-**Finished** follows Jellyfin’s own played state (someone can finish during credits without being at 100% of the runtime bar). The bar is shown **full** when Jellyfin marks the item as played.
+Completion follows Jellyfin's own played state (someone can finish during credits). For a series or season, the bar is full only when all available episodes are marked played.
 
-#### Movies
+#### Movies and individual episodes
 
-The shared card appears in the primary details area. Progress is based on that movie’s runtime.
+The shared card appears in the primary details area. Progress is based on that movie's or individual episode's runtime, with watched duration and percentage.
 
 #### Seasons
 
-The shared card appears at the **top** of the season view (above the episode list). Each row shows that person’s **highest started episode** in the season and its watch time and percentage. **Episode finished** refers to that episode, not the entire season.
+The shared card appears at the **top** of the season view (above the episode list). Each row counts completed episodes **within this season** and shows its overall percentage/bar, including partial episodes. The separate season/episode line shows the furthest started episode with **Started** or **Watched**.
 
 #### Series
 
-The shared card appears on the **series** detail page. Each row shows that person’s furthest started episode across the show (season and episode index, watch time, and percentage). **Episode finished** refers to that episode, not the entire series.
+The shared card appears on the **series** detail page. Each row counts completed episodes **across the entire available series**, including specials, and shows its overall percentage/bar. Each episode has equal weight; a half-watched episode contributes half an episode. The separate season/episode line shows the furthest started episode with **Started** or **Watched**, never the next episode.
 
 ### Seerr request attribution
 

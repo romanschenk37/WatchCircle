@@ -28,7 +28,8 @@
                 playbackPositionTicks: 0,
                 seasonIndexNumber: null,
                 episodeIndexNumber: null,
-                episodeRunTimeTicks: 0
+                episodeRunTimeTicks: 0,
+                aggregate: null
             };
         }
 
@@ -44,7 +45,8 @@
             episodeIndexNumber: episodeIndexNumber === undefined || episodeIndexNumber === null
                 ? null
                 : Number(episodeIndexNumber),
-            episodeRunTimeTicks: Number(raw.episodeRunTimeTicks || raw.EpisodeRunTimeTicks || 0)
+            episodeRunTimeTicks: Number(raw.episodeRunTimeTicks || raw.EpisodeRunTimeTicks || 0),
+            aggregate: raw.aggregate || raw.Aggregate || null
         };
     }
 
@@ -129,14 +131,41 @@
         return '';
     }
 
+    function formatEpisodeStatus(progress) {
+        const episode = formatEpisodeLine(progress);
+        return episode ? episode + ' · ' + t(progress.played ? 'Watched' : 'Started') : '';
+    }
+
+    function getAggregateDisplay(raw) {
+        function field(name) { return raw[name[0].toLowerCase() + name.slice(1)] ?? raw[name]; }
+        const total = Math.max(0, Number(field('TotalEpisodes')) || 0);
+        const completed = Math.max(0, Math.min(total, Number(field('CompletedEpisodes')) || 0));
+        // Only Jellyfin's played flags can complete the title. Rounding an almost
+        // finished episode must not produce a misleading 100% series/season bar.
+        const percent = total > 0 && completed === total ? 100
+            : total > 0 ? Math.max(0, Math.min(99, Math.round(Number(field('Percent')) || 0))) : 0;
+        return {
+            percent: percent,
+            status: total > 0 ? t('{completed} of {total} episodes completed ({percent}%)', { completed: completed, total: total, percent: percent })
+                : t('No available episodes')
+        };
+    }
+
     function createRow(options) {
         options = options || {};
 
         let progress = parseProgress(options.progress);
+        let aggregate = options.aggregate || progress.aggregate;
+        let aggregateDisplay = aggregate ? getAggregateDisplay(aggregate) : null;
         let runTimeTicks = getProgressRuntime(progress, options.runTimeTicks || 0);
         let variant = options.variant || 'you';
         let showStatus = options.showStatus !== false;
         let labelText = options.labelText || '';
+        let statusText = aggregateDisplay ? aggregateDisplay.status : options.statusText || formatProgressStatus(
+            progress.played, progress.playbackPositionTicks, runTimeTicks);
+        let percent = aggregateDisplay ? aggregateDisplay.percent : getProgressPercent(
+            progress.played, progress.playbackPositionTicks, runTimeTicks);
+        let episodeLineText = options.showEpisodeLine ? formatEpisodeStatus(progress) : '';
 
         if (!labelText) {
             labelText = formatCompactStatus(
@@ -148,6 +177,7 @@
 
         let row = document.createElement('div');
         row.className = 'wc-detail-progress-row';
+        if (aggregateDisplay) row.classList.add('wc-detail-progress-aggregate');
 
         let meta = document.createElement('div');
         meta.className = 'wc-detail-progress-meta';
@@ -161,18 +191,13 @@
         if (showStatus) {
             let status = document.createElement('span');
             status.className = 'wc-detail-progress-status';
-            status.textContent = options.statusText || formatProgressStatus(
-                progress.played,
-                progress.playbackPositionTicks,
-                runTimeTicks
-            );
+            status.textContent = statusText;
             meta.appendChild(status);
         }
 
         row.appendChild(meta);
 
         if (options.showEpisodeLine) {
-            let episodeLineText = formatEpisodeLine(progress);
             if (episodeLineText) {
                 let episodeLine = document.createElement('div');
                 episodeLine.className = 'wc-detail-progress-episode';
@@ -183,14 +208,16 @@
 
         let track = document.createElement('div');
         track.className = 'wc-detail-progress-track';
+        track.setAttribute('role', 'progressbar');
+        track.setAttribute('aria-label', labelText);
+        track.setAttribute('aria-valuemin', '0');
+        track.setAttribute('aria-valuemax', '100');
+        track.setAttribute('aria-valuenow', String(percent));
+        track.setAttribute('aria-valuetext', [statusText, episodeLineText].filter(Boolean).join(', '));
 
         let fill = document.createElement('div');
         fill.className = 'wc-detail-progress-fill wc-detail-progress-fill-' + variant;
-        fill.style.width = getProgressPercent(
-            progress.played,
-            progress.playbackPositionTicks,
-            runTimeTicks
-        ) + '%';
+        fill.style.width = percent + '%';
 
         track.appendChild(fill);
         row.appendChild(track);
@@ -214,6 +241,8 @@
         formatCompactStatus: formatCompactStatus,
         formatProgressStatus: formatProgressStatus,
         formatEpisodeLine: formatEpisodeLine,
+        formatEpisodeStatus: formatEpisodeStatus,
+        getAggregateDisplay: getAggregateDisplay,
         ensureStyles: ensureStyles,
         createRow: createRow,
         createSectionHeading: createSectionHeading

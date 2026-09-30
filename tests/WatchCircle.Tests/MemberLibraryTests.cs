@@ -235,7 +235,7 @@ public class MemberLibraryTests
         var row = Row(episodes[0].Id);
         row.PlayCount = 1;
         var result = Assert.Single(_service.BuildItems(_viewer.Id, _memberId, new[] { row }));
-        Assert.Null(result.Member.Episode!.SeasonIndexNumber);
+        Assert.Equal(0, result.Member.Episode!.SeasonIndexNumber);
         Assert.Equal(1, result.Member.Episode.EpisodeIndexNumber);
         Assert.Equal("started", result.Category);
     }

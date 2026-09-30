@@ -29,4 +29,7 @@ public class GroupWatcherDto : GroupUserDto
     /// Gets or sets the runtime of <see cref="EpisodeIndexNumber"/> in Jellyfin ticks.
     /// </summary>
     public long EpisodeRunTimeTicks { get; set; }
+
+    /// <summary>Gets or sets whole-series or whole-season progress, when applicable.</summary>
+    public LibraryProgressDto? Aggregate { get; set; }
 }

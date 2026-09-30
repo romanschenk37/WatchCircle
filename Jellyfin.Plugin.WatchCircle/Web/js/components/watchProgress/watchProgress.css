@@ -46,6 +46,15 @@
     opacity: 0.78;
 }
 
+.wc-detail-progress-aggregate .wc-detail-progress-meta {
+    flex-wrap: wrap;
+}
+
+.wc-detail-progress-aggregate .wc-detail-progress-status {
+    white-space: normal;
+    overflow: visible;
+}
+
 .wc-detail-progress-track {
     width: 100%;
     height: 0.45rem;
