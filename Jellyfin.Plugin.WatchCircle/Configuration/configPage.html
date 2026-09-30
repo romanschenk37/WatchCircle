@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>WatchCircle</title>
+</head>
+<body>
+    <div id="WatchCircleConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <p id="wcPageIntro" class="wc-page-intro">
+                    Organize watch groups and choose which Jellyfin users belong to each one.
+                </p>
+
+                <div id="groupsListView" data-wc-hidden="false">
+                    <section class="wc-section" aria-labelledby="wcCreateSectionTitle">
+                        <div class="wc-section-header wc-section-header-compact">
+                            <div>
+                                <h2 id="wcCreateSectionTitle" class="wc-section-title">Create a group</h2>
+                                <p class="wc-section-subtitle">Give your group a name, then manage its members from the card below.</p>
+                            </div>
+                        </div>
+
+                        <div class="wc-create-row">
+                            <div class="inputContainer">
+                                <label class="inputLabel inputLabelUnfocused" for="newGroupName">Group name</label>
+                                <input id="newGroupName" name="newGroupName" type="text" is="emby-input" maxlength="100" placeholder="e.g. Friday Night Crew" />
+                            </div>
+                            <button is="emby-button" type="button" id="createGroupButton" class="raised button-submit emby-button">
+                                <span>Create group</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="wc-section" aria-labelledby="wcGroupsSectionTitle">
+                        <div class="wc-section-header">
+                            <div>
+                                <h2 id="wcGroupsSectionTitle" class="wc-section-title">Your groups</h2>
+                            </div>
+                        </div>
+
+                        <div id="groupsGrid" class="wc-groups-grid"></div>
+
+                        <div id="groupsEmptyState" class="wc-empty-state" data-wc-hidden="true">
+                            <p class="wc-empty-state-title">No groups yet</p>
+                            <p>Create your first group in the section above.</p>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="groupDetailView" data-wc-hidden="true">
+                    <div class="wc-detail-top">
+                        <button is="emby-button" type="button" id="backToGroupsButton" class="raised emby-button">
+                            <span>← Back to groups</span>
+                        </button>
+                        <h2 id="groupDetailTitle" class="wc-detail-page-title"></h2>
+                    </div>
+
+                    <section class="wc-section" aria-labelledby="wcMembersSectionTitle">
+                        <div class="wc-section-header">
+                            <div>
+                                <h2 id="wcMembersSectionTitle" class="wc-section-title">Members</h2>
+                                <p class="wc-section-subtitle">Check the users who belong to this group. New server users appear here unchecked.</p>
+                            </div>
+                        </div>
+
+                        <form id="groupMembersForm">
+                            <div id="usersList" class="wc-user-select wc-users-list checkboxListContainer"></div>
+
+                            <div class="wc-actions-bar">
+                                <button is="emby-button" type="submit" class="raised button-submit emby-button">
+                                    <span>Save members</span>
+                                </button>
+                                <div class="wc-danger-zone">
+                                    <button is="emby-button" type="button" id="deleteGroupButton" class="raised emby-button wc-danger-button">
+                                        <span>Delete group</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            function injectWatchCircleStyles() {
+                var styleId = 'watchcircle-config-styles';
+                var existingStyle = document.getElementById(styleId);
+
+                if (existingStyle) {
+                    return;
+                }
+
+                var style = document.createElement('style');
+                style.id = styleId;
+                style.type = 'text/css';
+                style.textContent = [
+                    '#WatchCircleConfigPage {',
+                    '    --wc-accent: #00a4dc;',
+                    '    --wc-accent-soft: rgba(0, 164, 220, 0.15);',
+                    '    --wc-surface: rgba(0, 0, 0, 0.28);',
+                    '    --wc-surface-hover: rgba(0, 0, 0, 0.38);',
+                    '    --wc-border: rgba(255, 255, 255, 0.12);',
+                    '    --wc-border-strong: rgba(255, 255, 255, 0.22);',
+                    '    --wc-text-muted: rgba(255, 255, 255, 0.65);',
+                    '    --wc-radius: 0.5rem;',
+                    '    --wc-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-page-intro {',
+                    '    margin-bottom: 1.75rem;',
+                    '    line-height: 1.5;',
+                    '    color: var(--wc-text-muted);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-section {',
+                    '    margin-bottom: 2rem;',
+                    '    padding: 1.25rem 1.35rem 1.35rem;',
+                    '    border: 1px solid var(--wc-border);',
+                    '    border-radius: var(--wc-radius);',
+                    '    background: var(--wc-surface);',
+                    '    box-shadow: var(--wc-shadow);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-section-header {',
+                    '    display: flex;',
+                    '    align-items: flex-start;',
+                    '    justify-content: space-between;',
+                    '    gap: 1rem;',
+                    '    margin-bottom: 1rem;',
+                    '    padding-bottom: 0.85rem;',
+                    '    border-bottom: 2px solid var(--wc-accent);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-section-header-compact {',
+                    '    margin-bottom: 0.75rem;',
+                    '    padding-bottom: 0.65rem;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-section-title {',
+                    '    margin: 0;',
+                    '    font-size: 1.15rem;',
+                    '    font-weight: 700;',
+                    '    letter-spacing: 0.02em;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-section-subtitle {',
+                    '    margin: 0.35rem 0 0;',
+                    '    font-size: 0.92rem;',
+                    '    color: var(--wc-text-muted);',
+                    '    line-height: 1.45;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-create-row {',
+                    '    display: flex;',
+                    '    align-items: flex-end;',
+                    '    gap: 0.85rem;',
+                    '    flex-wrap: wrap;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-create-row .inputContainer {',
+                    '    flex: 1 1 18rem;',
+                    '    margin-bottom: 0;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-groups-grid {',
+                    '    display: grid;',
+                    '    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));',
+                    '    gap: 1rem;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card {',
+                    '    display: flex;',
+                    '    flex-direction: column;',
+                    '    min-height: 11rem;',
+                    '    padding: 0;',
+                    '    border: 1px solid var(--wc-border);',
+                    '    border-radius: var(--wc-radius);',
+                    '    background: rgba(255, 255, 255, 0.04);',
+                    '    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);',
+                    '    overflow: hidden;',
+                    '    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card:hover {',
+                    '    border-color: var(--wc-border-strong);',
+                    '    transform: translateY(-2px);',
+                    '    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card-top {',
+                    '    display: flex;',
+                    '    align-items: flex-start;',
+                    '    gap: 0.85rem;',
+                    '    padding: 1rem 1rem 0.75rem;',
+                    '    flex: 1;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card-body {',
+                    '    min-width: 0;',
+                    '    flex: 1;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card-name {',
+                    '    margin: 0 0 0.45rem;',
+                    '    font-size: 1.05rem;',
+                    '    font-weight: 700;',
+                    '    word-break: break-word;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card-meta {',
+                    '    display: flex;',
+                    '    align-items: center;',
+                    '    gap: 0.5rem;',
+                    '    flex-wrap: wrap;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-badge {',
+                    '    display: inline-flex;',
+                    '    align-items: center;',
+                    '    padding: 0.2rem 0.55rem;',
+                    '    border-radius: 999px;',
+                    '    background: rgba(255, 255, 255, 0.08);',
+                    '    border: 1px solid var(--wc-border);',
+                    '    font-size: 0.82rem;',
+                    '    color: var(--wc-text-muted);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card-footer {',
+                    '    padding: 0.85rem 1rem 1rem;',
+                    '    border-top: 1px solid var(--wc-border);',
+                    '    background: rgba(0, 0, 0, 0.12);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-group-card-footer button {',
+                    '    width: 100%;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-empty-state {',
+                    '    padding: 2.25rem 1rem;',
+                    '    text-align: center;',
+                    '    border: 1px dashed var(--wc-border-strong);',
+                    '    border-radius: var(--wc-radius);',
+                    '    color: var(--wc-text-muted);',
+                    '    background: rgba(0, 0, 0, 0.12);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-empty-state-title {',
+                    '    margin: 0 0 0.35rem;',
+                    '    font-size: 1rem;',
+                    '    font-weight: 600;',
+                    '    color: inherit;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-detail-top {',
+                    '    margin-bottom: 1.5rem;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-detail-top button {',
+                    '    margin-bottom: 0.85rem;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-detail-page-title {',
+                    '    margin: 0;',
+                    '    font-size: 1.25rem;',
+                    '    font-weight: 700;',
+                    '    word-break: break-word;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-actions-bar {',
+                    '    display: flex;',
+                    '    align-items: center;',
+                    '    gap: 0.75rem;',
+                    '    flex-wrap: wrap;',
+                    '    margin-top: 1.25rem;',
+                    '    padding-top: 1.1rem;',
+                    '    border-top: 1px solid var(--wc-border);',
+                    '}',
+                    '#WatchCircleConfigPage .wc-actions-bar .wc-danger-zone {',
+                    '    margin-left: auto;',
+                    '}',
+                    '#WatchCircleConfigPage .wc-danger-button {',
+                    '    color: #ff8f8f !important;',
+                    '}',
+                    '#WatchCircleConfigPage [data-wc-hidden="true"] {',
+                    '    display: none !important;',
+                    '}',
+                    '@media (max-width: 40rem) {',
+                    '    #WatchCircleConfigPage .wc-actions-bar .wc-danger-zone {',
+                    '        margin-left: 0;',
+                    '        width: 100%;',
+                    '    }',
+                    '    #WatchCircleConfigPage .wc-actions-bar .wc-danger-zone button {',
+                    '        width: 100%;',
+                    '    }',
+                    '}'
+                ].join('\n');
+
+                (document.head || document.documentElement).appendChild(style);
+            }
+
+            var WatchCircleConfig = {
+                pluginUniqueId: '33f774e1-5cb2-4aca-a349-f6ec2bd82c7f',
+                config: null,
+                users: [],
+                selectedGroupId: null,
+                isSaving: false,
+                saveQueue: Promise.resolve()
+            };
+
+            function setBbVisible(element, visible) {
+                if (!element) {
+                    return;
+                }
+
+                element.hidden = !visible;
+                element.setAttribute('data-wc-hidden', visible ? 'false' : 'true');
+                element.style.display = visible ? '' : 'none';
+            }
+
+            function normalizeGroup(group) {
+                return {
+                    Id: group.Id || group.id,
+                    Name: group.Name || group.name || '',
+                    MemberUserIds: group.MemberUserIds || group.memberUserIds || []
+                };
+            }
+
+            function normalizeConfig(config) {
+                var rawGroups = config.Groups || config.groups || [];
+                config.Groups = rawGroups.map(normalizeGroup);
+                delete config.groups;
+                return config;
+            }
+
+            function getGroups() {
+                return (WatchCircleConfig.config && WatchCircleConfig.config.Groups) ? WatchCircleConfig.config.Groups : [];
+            }
+
+            function ensureUserSelectModule() {
+                return new Promise(function (resolve, reject) {
+                    if (window.WatchCircleUserSelect) {
+                        WatchCircleUserSelect.ensureStyles();
+                        resolve();
+                        return;
+                    }
+
+                    var existing = document.getElementById('watchcircle-user-select-script');
+                    if (existing) {
+                        existing.addEventListener('load', function () {
+                            WatchCircleUserSelect.ensureStyles();
+                            resolve();
+                        }, { once: true });
+                        existing.addEventListener('error', reject, { once: true });
+                        return;
+                    }
+
+                    var script = document.createElement('script');
+                    script.id = 'watchcircle-user-select-script';
+                    script.src = ApiClient.getUrl('WatchCircle/js/components/userSelect/userSelect.js');
+                    script.addEventListener('load', function () {
+                        WatchCircleUserSelect.ensureStyles();
+                        resolve();
+                    }, { once: true });
+                    script.addEventListener('error', reject, { once: true });
+                    document.head.appendChild(script);
+                });
+            }
+
+            function normalizeGuid(value) {
+                if (window.WatchCircleUserSelect) {
+                    return WatchCircleUserSelect.normalizeGuid(value);
+                }
+
+                return (value || '').toString().toLowerCase();
+            }
+
+            function createGuid() {
+                if (window.crypto && crypto.randomUUID) {
+                    return crypto.randomUUID();
+                }
+
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
+                    var random = Math.random() * 16 | 0;
+                    var value = character === 'x' ? random : ((random & 0x3) | 0x8);
+                    return value.toString(16);
+                });
+            }
+
+            function getGroupById(groupId) {
+                return getGroups().find(function (group) {
+                    return normalizeGuid(group.Id) === normalizeGuid(groupId);
+                });
+            }
+
+            function getMemberCount(group) {
+                return (group && group.MemberUserIds) ? group.MemberUserIds.length : 0;
+            }
+
+            function memberCountLabel(count) {
+                return count === 1 ? '1 member' : count + ' members';
+            }
+
+            function updateDetailTitle(group) {
+                document.querySelector('#groupDetailTitle').textContent = 'Group: ' + group.Name;
+            }
+
+            function showListView() {
+                WatchCircleConfig.selectedGroupId = null;
+                setBbVisible(document.querySelector('#groupsListView'), true);
+                setBbVisible(document.querySelector('#groupDetailView'), false);
+                setBbVisible(document.querySelector('#wcPageIntro'), true);
+            }
+
+            function showDetailView(groupId) {
+                var group = getGroupById(groupId);
+                if (!group) {
+                    return;
+                }
+
+                WatchCircleConfig.selectedGroupId = group.Id;
+                setBbVisible(document.querySelector('#groupsListView'), false);
+                setBbVisible(document.querySelector('#groupDetailView'), true);
+                setBbVisible(document.querySelector('#wcPageIntro'), false);
+                updateDetailTitle(group);
+                renderUsersList(group);
+            }
+
+            function openGroup(groupId) {
+                showDetailView(groupId);
+            }
+
+            function renderGroupsGrid() {
+                var groups = getGroups();
+                var grid = document.querySelector('#groupsGrid');
+                var emptyState = document.querySelector('#groupsEmptyState');
+
+                grid.innerHTML = '';
+
+                if (!groups.length) {
+                    setBbVisible(grid, false);
+                    setBbVisible(emptyState, true);
+                    return;
+                }
+
+                setBbVisible(grid, true);
+                setBbVisible(emptyState, false);
+
+                groups.forEach(function (group) {
+                    var card = document.createElement('article');
+                    card.className = 'wc-group-card';
+                    card.dataset.groupId = group.Id;
+
+                    var top = document.createElement('div');
+                    top.className = 'wc-group-card-top';
+
+                    var body = document.createElement('div');
+                    body.className = 'wc-group-card-body';
+
+                    var name = document.createElement('h3');
+                    name.className = 'wc-group-card-name';
+                    name.textContent = group.Name;
+
+                    var meta = document.createElement('div');
+                    meta.className = 'wc-group-card-meta';
+
+                    var badge = document.createElement('span');
+                    badge.className = 'wc-badge';
+                    badge.textContent = memberCountLabel(getMemberCount(group));
+
+                    meta.appendChild(badge);
+                    body.appendChild(name);
+                    body.appendChild(meta);
+
+                    top.appendChild(body);
+
+                    var footer = document.createElement('div');
+                    footer.className = 'wc-group-card-footer';
+
+                    var manageButton = document.createElement('button');
+                    manageButton.type = 'button';
+                    manageButton.className = 'raised emby-button';
+                    manageButton.setAttribute('is', 'emby-button');
+                    manageButton.innerHTML = '<span>Manage group →</span>';
+                    manageButton.addEventListener('click', function (event) {
+                        event.stopPropagation();
+                        openGroup(group.Id);
+                    });
+
+                    footer.appendChild(manageButton);
+                    card.appendChild(top);
+                    card.appendChild(footer);
+                    grid.appendChild(card);
+                });
+            }
+
+            function isUserInGroup(group, userId) {
+                var memberIds = (group && group.MemberUserIds) ? group.MemberUserIds : [];
+                return memberIds.some(function (memberId) {
+                    return normalizeGuid(memberId) === normalizeGuid(userId);
+                });
+            }
+
+            function renderUsersList(group) {
+                WatchCircleUserSelect.render(document.querySelector('#usersList'), WatchCircleConfig.users, {
+                    isSelected: function (userId) {
+                        return isUserInGroup(group, userId);
+                    }
+                });
+            }
+
+            function setSavingState(isSaving) {
+                WatchCircleConfig.isSaving = isSaving;
+                document.querySelector('#createGroupButton').disabled = isSaving;
+                document.querySelector('#groupsGrid').style.pointerEvents = isSaving ? 'none' : '';
+                document.querySelector('#groupMembersForm').style.pointerEvents = isSaving ? 'none' : '';
+            }
+
+            function reloadConfiguration() {
+                return ApiClient.getPluginConfiguration(WatchCircleConfig.pluginUniqueId)
+                    .then(function (config) {
+                        WatchCircleConfig.config = normalizeConfig(config || {});
+                        return WatchCircleConfig.config;
+                    });
+            }
+
+            function saveConfiguration(applyChanges, onSuccess) {
+                WatchCircleConfig.saveQueue = WatchCircleConfig.saveQueue
+                    .catch(function () { })
+                    .then(function () {
+                        setSavingState(true);
+                        Dashboard.showLoadingMsg();
+
+                        return ApiClient.getPluginConfiguration(WatchCircleConfig.pluginUniqueId)
+                            .then(function (config) {
+                                config = normalizeConfig(config || {});
+
+                                if (typeof applyChanges === 'function') {
+                                    applyChanges(config);
+                                }
+
+                                delete config.groups;
+                                WatchCircleConfig.config = config;
+
+                                return ApiClient.updatePluginConfiguration(WatchCircleConfig.pluginUniqueId, config);
+                            })
+                            .then(function (result) {
+                                return reloadConfiguration().then(function () {
+                                    return result;
+                                });
+                            })
+                            .then(function (result) {
+                                Dashboard.processPluginConfigurationUpdateResult(result);
+
+                                if (typeof onSuccess === 'function') {
+                                    onSuccess();
+                                }
+                            })
+                            .catch(function () {
+                                Dashboard.hideLoadingMsg();
+                                Dashboard.alert({
+                                    title: 'Save failed',
+                                    message: 'Could not save plugin settings. Please try again.'
+                                });
+                            })
+                            .finally(function () {
+                                setSavingState(false);
+                            });
+                    });
+
+                return WatchCircleConfig.saveQueue;
+            }
+
+            function loadPageData() {
+                Dashboard.showLoadingMsg();
+
+                ensureUserSelectModule()
+                    .then(function () {
+                        var configPromise = ApiClient.getPluginConfiguration(WatchCircleConfig.pluginUniqueId)
+                            .then(function (config) {
+                                WatchCircleConfig.config = normalizeConfig(config || {});
+                            });
+
+                        var usersPromise = WatchCircleUserSelect.loadUsers()
+                            .then(function (users) {
+                                WatchCircleConfig.users = users || [];
+                            });
+
+                        return Promise.all([configPromise, usersPromise]);
+                    })
+                    .then(function () {
+                        if (WatchCircleConfig.selectedGroupId) {
+                            var selectedGroup = getGroupById(WatchCircleConfig.selectedGroupId);
+                            if (selectedGroup) {
+                                showDetailView(selectedGroup.Id);
+                            } else {
+                                showListView();
+                                renderGroupsGrid();
+                            }
+                        } else {
+                            showListView();
+                            renderGroupsGrid();
+                        }
+
+                        Dashboard.hideLoadingMsg();
+                    })
+                    .catch(function () {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert({
+                            title: 'Load failed',
+                            message: 'Could not load plugin settings. Please refresh the page.'
+                        });
+                    });
+            }
+
+            injectWatchCircleStyles();
+
+            document.querySelector('#WatchCircleConfigPage')
+                .addEventListener('pageshow', function () {
+                    injectWatchCircleStyles();
+                    loadPageData();
+                });
+
+            document.querySelector('#createGroupButton')
+                .addEventListener('click', function () {
+                    var nameInput = document.querySelector('#newGroupName');
+                    var name = (nameInput.value || '').trim();
+
+                    if (!name) {
+                        Dashboard.alert({
+                            title: 'Group name required',
+                            message: 'Please enter a name for the new group.'
+                        });
+                        return;
+                    }
+
+                    var duplicate = getGroups().some(function (group) {
+                        return group.Name.toLowerCase() === name.toLowerCase();
+                    });
+
+                    if (duplicate) {
+                        Dashboard.alert({
+                            title: 'Duplicate group name',
+                            message: 'A group with this name already exists.'
+                        });
+                        return;
+                    }
+
+                    var newGroup = {
+                        Id: createGuid(),
+                        Name: name,
+                        MemberUserIds: []
+                    };
+
+                    saveConfiguration(function (config) {
+                        config.Groups.push(newGroup);
+                    }, function () {
+                        nameInput.value = '';
+                        showListView();
+                        renderGroupsGrid();
+                    });
+                });
+
+            document.querySelector('#newGroupName')
+                .addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        document.querySelector('#createGroupButton').click();
+                    }
+                });
+
+            document.querySelector('#backToGroupsButton')
+                .addEventListener('click', function () {
+                    if (WatchCircleConfig.isSaving) {
+                        return;
+                    }
+
+                    reloadConfiguration().then(function () {
+                        showListView();
+                        renderGroupsGrid();
+                    });
+                });
+
+            document.querySelector('#groupMembersForm')
+                .addEventListener('submit', function (event) {
+                    event.preventDefault();
+
+                    var group = getGroupById(WatchCircleConfig.selectedGroupId);
+                    if (!group) {
+                        return false;
+                    }
+
+                    var groupId = group.Id;
+                    var selectedUserIds = WatchCircleUserSelect.getSelectedUserIds(document.querySelector('#usersList'));
+
+                    saveConfiguration(function (config) {
+                        var targetGroup = (config.Groups || []).find(function (item) {
+                            return normalizeGuid(item.Id) === normalizeGuid(groupId);
+                        });
+
+                        if (!targetGroup) {
+                            throw new Error('Group not found');
+                        }
+
+                        targetGroup.MemberUserIds = selectedUserIds;
+                    }, function () {
+                        var updatedGroup = getGroupById(groupId);
+                        if (updatedGroup) {
+                            updateDetailTitle(updatedGroup);
+                        }
+                        renderGroupsGrid();
+                    });
+
+                    return false;
+                });
+
+            document.querySelector('#deleteGroupButton')
+                .addEventListener('click', function () {
+                    var group = getGroupById(WatchCircleConfig.selectedGroupId);
+                    if (!group) {
+                        return;
+                    }
+
+                    var groupIdToDelete = group.Id;
+                    var groupName = group.Name;
+
+                    Dashboard.confirm(
+                        'Delete the group "' + groupName + '"? This cannot be undone.',
+                        'Delete Group',
+                        function (confirmed) {
+                            if (!confirmed) {
+                                return;
+                            }
+
+                            saveConfiguration(function (config) {
+                                config.Groups = (config.Groups || []).filter(function (item) {
+                                    return normalizeGuid(item.Id) !== normalizeGuid(groupIdToDelete);
+                                });
+                            }, function () {
+                                showListView();
+                                renderGroupsGrid();
+                            });
+                        }
+                    );
+                });
+        </script>
+    </div>
+</body>
+</html>

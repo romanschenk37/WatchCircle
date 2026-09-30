@@ -1,0 +1,138 @@
+.wc-media-select {
+    --wc-accent: #00a4dc;
+    --wc-accent-soft: rgba(0, 164, 220, 0.15);
+    --wc-border: rgba(255, 255, 255, 0.12);
+    --wc-border-strong: rgba(255, 255, 255, 0.22);
+    --wc-radius: 0.5rem;
+    --wc-text-muted: rgba(255, 255, 255, 0.65);
+}
+
+.wc-media-select.wc-media-list,
+.wc-media-select.checkboxListContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-bottom: 0 !important;
+}
+
+.wc-media-select .wc-media-row.checkboxContainer {
+    margin: 0 !important;
+    padding: 0.85rem 1rem;
+    min-height: 5.5rem;
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--wc-border);
+    border-radius: calc(var(--wc-radius) - 0.1rem);
+    background: rgba(0, 0, 0, 0.14);
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.wc-media-select .wc-media-row.checkboxContainer:hover {
+    background: rgba(0, 0, 0, 0.24);
+    border-color: var(--wc-border-strong);
+}
+
+.wc-media-select .wc-media-row.checkboxContainer.is-selected {
+    border-color: rgba(0, 164, 220, 0.55);
+    background: var(--wc-accent-soft);
+}
+
+.wc-media-select .wc-media-row .emby-checkbox-label {
+    display: flex;
+    align-items: stretch;
+    padding-left: 0;
+    gap: 0.85rem;
+    width: 100%;
+    flex: 1;
+    min-height: 100%;
+    margin: 0;
+    cursor: pointer;
+    height: unset !important;
+}
+
+.wc-media-select .wc-media-row .emby-checkbox-label input[type="checkbox"] {
+    align-self: center;
+    flex-shrink: 0;
+}
+
+.wc-media-select .wc-media-thumb-wrap {
+    flex-shrink: 0;
+    align-self: stretch;
+    width: 6.75rem;
+    min-height: 3.75rem;
+    border-radius: calc(var(--wc-radius) - 0.15rem);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--wc-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.1;
+    text-align: center;
+    padding: 0.35rem;
+}
+
+.wc-media-select .wc-media-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.wc-media-select .wc-media-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: stretch;
+    min-width: 0;
+    min-height: 100%;
+    height: 100%;
+}
+
+.wc-media-select .wc-media-copy .wc-media-top-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+}
+
+.wc-media-select .wc-media-row .emby-checkbox-label span.wc-media-name {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.wc-media-select .wc-media-secondary {
+    font-size: 0.86rem;
+    line-height: 1.35;
+    color: var(--wc-text-muted);
+}
+
+.wc-media-select .wc-detail-progress-row {
+    margin-top: 0.15rem;
+    padding: 1rem;
+}
+
+.wc-media-select .wc-media-select-empty {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--wc-border-strong);
+    border-radius: var(--wc-radius);
+    color: var(--wc-text-muted);
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.wc-media-select .wc-media-select-empty-title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: inherit;
+}
+
+.wc-media-select .wc-media-select-empty p {
+    margin: 0;
+    line-height: 1.45;
+}

@@ -1,0 +1,243 @@
+.wc-watch-together-pending-content {
+    padding-top: 0.85rem;
+}
+
+.wc-watch-together-pending-intro {
+    flex-shrink: 0;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wc-watch-together-pending-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.55rem;
+}
+
+.wc-watch-together-pending-profile .wc-user-avatar-wrap {
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 164, 220, 0.15);
+    color: #00a4dc;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.wc-watch-together-pending-profile .wc-user-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.wc-watch-together-pending-host-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.wc-watch-together-pending-message {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.wc-watch-together-pending-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: 0.25rem;
+    padding-right: 0.2rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.wc-watch-together-pending-scroll .wc-media-select {
+    margin-bottom: 0;
+}
+
+.wc-watch-together-pending-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.wc-pending-chevron {
+    flex-shrink: 0;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-right: 2px solid rgba(255, 255, 255, 0.75);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.75);
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+    margin-top: 0.15rem;
+}
+
+.wc-pending-series,
+.wc-pending-season {
+    border: 1px solid var(--wc-border, rgba(255, 255, 255, 0.12));
+    border-radius: calc(var(--wc-radius, 0.5rem) - 0.1rem);
+    background: rgba(0, 0, 0, 0.14);
+    overflow: hidden;
+}
+
+.wc-pending-series-header,
+.wc-pending-season-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+
+.wc-pending-season-header {
+    cursor: pointer;
+}
+
+.wc-pending-series-header {
+    position: relative;
+    justify-content: center;
+    min-height: 3.25rem;
+    padding: 0.85rem 1rem 1.35rem;
+    overflow: hidden;
+    isolation: isolate;
+    cursor: default;
+}
+
+.wc-pending-series-header.has-backdrop {
+    min-height: 5.5rem;
+    padding-top: 1.1rem;
+    padding-bottom: 1.75rem;
+}
+
+.wc-pending-series-header-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%);
+}
+
+.wc-pending-series-header-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.58) 0%,
+        rgba(0, 0, 0, 0.58) 72%,
+        transparent 100%
+    );
+}
+
+.wc-pending-series-header-title {
+    position: absolute;
+    top: 0.85rem;
+    left: 1rem;
+    z-index: 3;
+    max-width: calc(100% - 2rem);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+    pointer-events: none;
+}
+
+.wc-pending-series-header.has-backdrop .wc-pending-series-logo-wrap,
+.wc-pending-series-header.has-backdrop .wc-pending-series-title {
+    position: relative;
+    z-index: 2;
+}
+
+.wc-pending-season-header:hover {
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.wc-pending-season.is-open > .wc-pending-season-header .wc-pending-chevron {
+    transform: rotate(45deg);
+    margin-top: 0;
+}
+
+.wc-pending-series-logo-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 14rem;
+    height: 2.75rem;
+    margin: 0 auto;
+}
+
+.wc-pending-series-logo {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.55));
+}
+
+.wc-pending-series-title {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.wc-pending-series-header.has-backdrop .wc-pending-series-title {
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+}
+
+.wc-pending-season-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.wc-pending-series-body,
+.wc-pending-season-body {
+    padding: 0 0.65rem 0.65rem;
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.wc-pending-season {
+    margin-top: 0.5rem;
+}
+
+.wc-pending-season + .wc-pending-season {
+    margin-top: 0.45rem;
+}
+
+.wc-pending-episode-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.wc-watch-together-pending-tree .wc-pending-episode-list .wc-media-row.checkboxContainer {
+    margin: 0 !important;
+}

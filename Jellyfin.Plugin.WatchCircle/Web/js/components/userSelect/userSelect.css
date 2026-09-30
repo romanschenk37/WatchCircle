@@ -1,0 +1,95 @@
+.wc-user-select {
+    --wc-accent: #00a4dc;
+    --wc-accent-soft: rgba(0, 164, 220, 0.15);
+    --wc-border: rgba(255, 255, 255, 0.12);
+    --wc-border-strong: rgba(255, 255, 255, 0.22);
+    --wc-radius: 0.5rem;
+    --wc-text-muted: rgba(255, 255, 255, 0.65);
+}
+
+.wc-user-select.wc-users-list,
+.wc-user-select.checkboxListContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-bottom: 0 !important;
+}
+
+.wc-user-select .wc-user-row.checkboxContainer {
+    margin: 0 !important;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--wc-border);
+    border-radius: calc(var(--wc-radius) - 0.1rem);
+    background: rgba(0, 0, 0, 0.14);
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.wc-user-select .wc-user-row.checkboxContainer:hover {
+    background: rgba(0, 0, 0, 0.24);
+    border-color: var(--wc-border-strong);
+}
+
+.wc-user-select .wc-user-row.checkboxContainer.is-selected {
+    border-color: rgba(0, 164, 220, 0.55);
+    background: var(--wc-accent-soft);
+}
+
+.wc-user-select .wc-user-row .emby-checkbox-label {
+    display: flex;
+    align-items: center;
+    padding-left: 0;
+    gap: 0.65rem;
+    width: 100%;
+    margin: 0;
+    cursor: pointer;
+}
+
+.wc-user-select .wc-user-avatar-wrap {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--wc-accent-soft);
+    color: var(--wc-accent);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.wc-user-select .wc-user-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.wc-user-select .wc-user-row .emby-checkbox-label span.wc-user-name {
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.wc-user-select .wc-user-select-empty {
+    padding: 1.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--wc-border-strong);
+    border-radius: var(--wc-radius);
+    color: var(--wc-text-muted);
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.wc-user-select .wc-user-select-empty-title {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: inherit;
+}
+
+.wc-user-select .wc-user-select-empty p {
+    margin: 0;
+    line-height: 1.45;
+}

@@ -1,0 +1,14 @@
+.wc-watch-together-user-scroll {
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: 0.25rem;
+    padding-right: 0.2rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.wc-watch-together-user-scroll .wc-user-select {
+    margin-bottom: 0;
+}

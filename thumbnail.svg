@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-labelledby="title description">
+  <title id="title">WatchCircle</title>
+  <desc id="description">A play symbol surrounded by a circle of people. Your groups' watch progress at a glance.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#142039"/>
+      <stop offset="1" stop-color="#09121f"/>
+    </linearGradient>
+    <linearGradient id="accent" x2="1" y2="1">
+      <stop stop-color="#71e5d0"/>
+      <stop offset="1" stop-color="#61a8ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" rx="32" fill="url(#background)"/>
+  <circle cx="480" cy="187" r="91" fill="none" stroke="url(#accent)" stroke-width="10"/>
+  <g fill="#71e5d0" stroke="#142039" stroke-width="8">
+    <circle cx="480" cy="96" r="18"/>
+    <circle cx="401" cy="233" r="18"/>
+    <circle cx="559" cy="233" r="18"/>
+  </g>
+  <path d="M462 153 L462 221 L514 187 Z" fill="url(#accent)" stroke-linejoin="round" stroke="#71e5d0" stroke-width="4"/>
+  <text x="480" y="367" text-anchor="middle" fill="#f4f8ff" font-family="Segoe UI, Arial, sans-serif" font-size="72" font-weight="700">WatchCircle</text>
+  <text x="480" y="420" text-anchor="middle" fill="#a8b9d1" font-family="Segoe UI, Arial, sans-serif" font-size="25">Your groups' watch progress at a glance.</text>
+</svg>

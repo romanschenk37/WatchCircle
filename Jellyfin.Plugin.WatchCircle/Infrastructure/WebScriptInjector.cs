@@ -1,0 +1,120 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using MediaBrowser.Common.Configuration;
+using Microsoft.Extensions.Logging;
+
+namespace Jellyfin.Plugin.WatchCircle.Infrastructure;
+
+/// <summary>
+/// Injects the WatchCircle client script into the Jellyfin web index page.
+/// </summary>
+public partial class WebScriptInjector
+{
+    private const string ScriptMarker = "plugin=\"WatchCircle\"";
+    private const string ScriptSrc = "/WatchCircle/script";
+    private const string ScriptTag = "<script plugin=\"WatchCircle\" src=\"/WatchCircle/script\" defer></script>";
+
+    private readonly IApplicationPaths _applicationPaths;
+    private readonly ILogger<WebScriptInjector> _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebScriptInjector"/> class.
+    /// </summary>
+    /// <param name="applicationPaths">The Jellyfin application paths.</param>
+    /// <param name="logger">The logger.</param>
+    public WebScriptInjector(IApplicationPaths applicationPaths, ILogger<WebScriptInjector> logger)
+    {
+        _applicationPaths = applicationPaths;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Ensures the client script tag is present in index.html.
+    /// </summary>
+    public void EnsureInjected()
+    {
+        try
+        {
+            var indexPath = Path.Combine(_applicationPaths.WebPath, "index.html");
+            if (!File.Exists(indexPath))
+            {
+                _logger.LogWarning("Unable to inject WatchCircle script because index.html was not found at {IndexPath}", indexPath);
+                return;
+            }
+
+            var html = File.ReadAllText(indexPath);
+            if (html.Contains(ScriptMarker, StringComparison.Ordinal))
+            {
+                var normalizedHtml = NormalizeExistingScriptTag(html);
+                if (!string.Equals(normalizedHtml, html, StringComparison.Ordinal))
+                {
+                    File.WriteAllText(indexPath, normalizedHtml);
+                    if (_logger.IsEnabled(LogLevel.Information))
+                    {
+                        _logger.LogInformation("Updated WatchCircle client script tag in {IndexPath}", indexPath);
+                    }
+                }
+
+                return;
+            }
+
+            var updatedHtml = html.Replace("</body>", ScriptTag + Environment.NewLine + "</body>", StringComparison.Ordinal);
+            File.WriteAllText(indexPath, updatedHtml);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Injected WatchCircle client script into {IndexPath}", indexPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to inject WatchCircle client script into index.html");
+        }
+    }
+
+    /// <summary>
+    /// Removes the client script tag from index.html.
+    /// </summary>
+    public void Remove()
+    {
+        try
+        {
+            var indexPath = Path.Combine(_applicationPaths.WebPath, "index.html");
+            if (!File.Exists(indexPath))
+            {
+                return;
+            }
+
+            var html = File.ReadAllText(indexPath);
+            if (!html.Contains(ScriptMarker, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            var lines = html.Split('\n');
+            var filtered = lines.Where(line => !line.Contains(ScriptMarker, StringComparison.Ordinal)).ToArray();
+            File.WriteAllText(indexPath, string.Join('\n', filtered));
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Removed WatchCircle client script from {IndexPath}", indexPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove WatchCircle client script from index.html");
+        }
+    }
+
+    private static string NormalizeExistingScriptTag(string html)
+    {
+        return WatchCircleScriptTagRegex().Replace(
+            html,
+            match => match.Value.Contains(ScriptSrc, StringComparison.Ordinal)
+                ? match.Value
+                : match.Value.Replace(match.Groups["src"].Value, ScriptSrc, StringComparison.Ordinal));
+    }
+
+    [GeneratedRegex("(?<tag><script[^>]*plugin=\"WatchCircle\"[^>]*src=\")(?<src>[^\"]+)(\"[^>]*></script>)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex WatchCircleScriptTagRegex();
+}

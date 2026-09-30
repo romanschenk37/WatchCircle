@@ -1,0 +1,12 @@
+.wc-navbar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wc-navbar-icon {
+    display: block;
+    width: 1.25em;
+    height: 1.25em;
+    font-size: 1.5rem;
+}
