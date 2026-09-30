@@ -10,6 +10,15 @@
     "assemblies": [
       "Jellyfin.Plugin.WatchCircle.dll"
     ],
-    "versions": []
+    "versions": [
+      {
+        "version": "1.0.2.0",
+        "changelog": "# WatchCircle 1.0.2.0 — first test release\n\nWatchCircle now has its own name, plugin ID, settings page, API routes and client assets, separate from Binge Buddy.\n\nThis release is intended to test installation and the renamed plugin on Jellyfin 12.1. The catalog minimum remains Jellyfin 12.0, as inherited from the upstream plugin. Runtime verification on a Jellyfin server is still pending.\n\nThe inherited individual progress cards and Watch together feature are still present. The planned single shared progress card, automatic group membership and removal of Watch together are not implemented yet. Existing Binge Buddy groups are not imported automatically.\n\nAfter publication, add this repository in Jellyfin under **Dashboard → Plugins → Repositories**:\n\n`https://raw.githubusercontent.com/romanschenk37/WatchCircle/master/manifest.json`\n\nInstall **WatchCircle** from the catalog, restart Jellyfin and reload the web client. Disable Binge Buddy while testing to avoid showing both plugins' interfaces.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/romanschenk37/WatchCircle/releases/download/v1.0.2.0/jellyfin-watchcircle_1.0.2.0.zip",
+        "checksum": "fa02e9cbe22259ab35d798a282f3a5f7",
+        "timestamp": "2026-09-30T10:43:43Z"
+      }
+    ]
   }
 ]

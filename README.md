@@ -21,9 +21,7 @@ Use it to plan the next watch session: browse a library, open a movie or season,
 
 ## Installation
 
-No WatchCircle release has been published yet. Build it using the instructions below for a manual installation. The catalog manifest intentionally contains no versions until an actual WatchCircle package is released; it does not offer the original plugin's binaries.
-
-After the first WatchCircle release is published:
+The first [WatchCircle test release, 1.0.2.0](https://github.com/romanschenk37/WatchCircle/releases/tag/v1.0.2.0), is available for installation through Jellyfin's plugin catalog. The catalog contains WatchCircle packages only.
 
 1. Open **Dashboard → Plugins → Manage Repositories** and add a new one:
    - Name: `WatchCircle`
@@ -31,6 +29,8 @@ After the first WatchCircle release is published:
 2. Go back to **Dashboard → Plugins** and filter "All".
 3. Select **WatchCircle** and install it.
 4. After installation you must restart the server to enable the plugin (**Dashboard → Restart**).
+
+For the first test on Jellyfin 12.1, disable Binge Buddy and refresh the web client after restarting. WatchCircle still has the inherited feature set described below; the shared progress card and automatic group membership will follow in later versions.
 
 ## How It Works
 
