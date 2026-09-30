@@ -3,7 +3,7 @@
 ![WatchCircle](./thumbnail.svg)
 
 > [!NOTE]
-> WatchCircle is under development. Shared progress cards, automatic group membership and optional Seerr request attribution are available. The inherited Watch together feature remains present; its removal will follow separately.
+> WatchCircle is under development. Shared progress cards, group member profiles, automatic group membership and optional Seerr request attribution are available. The inherited Watch together feature remains present; its removal will follow separately.
 
 ## About
 
@@ -61,6 +61,24 @@ For each buddy, WatchCircle reads Jellyfin **user data** for the item (or for an
 Watch history is retroactive—it counts even if someone watched **before** they were added to a group.
 
 Your own account is excluded from the poster overlays and the progress rows. Each other person appears once, even if you share several groups. People without a shared group or without any viewing progress on the title are excluded from the progress rows. If nobody qualifies and there is no Seerr request attribution, the card is hidden.
+
+### People and profiles
+
+The **WatchCircle** button in the web client's header opens a searchable list of everyone sharing at least one group with you. Each person appears once; your own account is excluded. Clicking a person opens a comparison with your existing Jellyfin progress. Names and avatars in the shared progress card open the same profile.
+
+Profiles have three exclusive categories, based on the selected person's data:
+
+- **Begonnen (Started)**: titles with playback history that are not completed.
+- **Abgeschlossen (Completed)**: movies marked played, and series whose available episodes are all marked played.
+- **Favoriten (Favorites)**: favorited movies or series that the person has not started. A favorite already started or completed stays in that category.
+
+Every title includes the person's progress and **Du (You)** for comparison, even if you have not started it. Search and a movie/series filter help with larger lists; **Weitere Titel anzeigen** expands the initial 24 results. Clicking a title opens its Jellyfin detail page.
+
+For profiles, series progress covers **all available episodes visible to the viewer, including specials**, with each episode contributing equally. Partial episodes contribute their saved playback fraction. Missing/virtual episodes are excluded, and both users use the same denominator. Completing the last available episode means **up to date**, not that no future seasons will be released. New available episodes can move a series back into Started. Unknown movie runtimes show an unknown percentage rather than inventing one. The detail-page card continues to show the furthest started episode.
+
+The server checks common group membership on every profile request and filters library access as the signed-in viewer. Guessing another user's profile URL does not bypass the group check. Profiles read existing Jellyfin progress and favorites without saving additional history or a persistent profile cache.
+
+Seerr requester names open profiles only when their exact linked Jellyfin user ID belongs to a shared group. Other requesters remain visible as plain text; matching display names alone does not create a link.
 
 ### Poster overlays
 

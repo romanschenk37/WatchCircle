@@ -175,6 +175,7 @@
         let progress = parseWatchProgress(raw);
 
         return {
+            Id: raw.Id || raw.id || '',
             Name: raw.Name || raw.name || '',
             name: raw.Name || raw.name || '',
             ImageUrl: raw.ImageUrl || raw.imageUrl || '',
@@ -352,6 +353,16 @@
             requesters.forEach(function (requester) {
                 let entry = document.createElement('li');
                 entry.textContent = requester.Name || requester.name || '';
+                let profileId = requester.ProfileUserId || requester.profileUserId;
+                if (profileId && window.WatchCircleAssets && WatchCircleAssets.showProfiles) {
+                    let link = document.createElement('button');
+                    link.type = 'button';
+                    link.className = 'wc-profile-name-link';
+                    link.textContent = entry.textContent;
+                    link.title = 'WatchCircle-Profil von ' + entry.textContent;
+                    link.addEventListener('click', function () { WatchCircleAssets.showProfiles(profileId); });
+                    entry.replaceChildren(link);
+                }
                 let seasons = requester.Seasons || requester.seasons || [];
                 if (overlay.isSeries && seasons.length) {
                     let detail = document.createElement('span');
@@ -419,6 +430,24 @@
                 let label = document.createElement('span');
                 label.textContent = name;
                 row.appendChild(label);
+            }
+
+            let profileLabel = row.querySelector('.wc-detail-progress-label') || row.lastElementChild;
+            if (watcher.Id && window.WatchCircleAssets && WatchCircleAssets.showProfiles) {
+                let profileButton = document.createElement('button');
+                profileButton.type = 'button';
+                profileButton.className = 'wc-profile-name-link ' + profileLabel.className;
+                profileButton.textContent = name;
+                profileButton.title = 'WatchCircle-Profil von ' + name;
+                profileButton.addEventListener('click', function () { WatchCircleAssets.showProfiles(watcher.Id); });
+                profileLabel.replaceWith(profileButton);
+                let avatarButton = document.createElement('button');
+                avatarButton.type = 'button';
+                avatarButton.className = 'wc-profile-avatar-link';
+                avatarButton.setAttribute('aria-label', profileButton.title);
+                avatar.replaceWith(avatarButton);
+                avatarButton.appendChild(avatar);
+                avatarButton.addEventListener('click', function () { WatchCircleAssets.showProfiles(watcher.Id); });
             }
 
             list.appendChild(row);

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Jellyfin.Plugin.WatchCircle.Abstractions;
 using Jellyfin.Plugin.WatchCircle.Api;
 using Jellyfin.Plugin.WatchCircle.Configuration;
 using Jellyfin.Plugin.WatchCircle.Services;
@@ -18,6 +19,7 @@ public class SeerrTests : IDisposable
 {
     private readonly GroupManagementTests.TestPlugin _plugin = new();
     private readonly Mock<ILibraryManager> _library = new();
+    private readonly Mock<IGroupMembershipService> _groups = new();
     private readonly StubHandler _handler = new();
     private readonly HttpClient _client;
     private readonly SeerrService _service;
@@ -27,7 +29,8 @@ public class SeerrTests : IDisposable
     public SeerrTests()
     {
         _client = new HttpClient(_handler);
-        _service = new SeerrService(_client, _library.Object, NullLogger<SeerrService>.Instance);
+        _groups.Setup(value => value.GetVisibleMemberIds(It.IsAny<Guid>())).Returns(Array.Empty<Guid>());
+        _service = new SeerrService(_client, _library.Object, NullLogger<SeerrService>.Instance, _groups.Object);
         _plugin.Configuration.Seerr = new SeerrConfiguration { Enabled = true, Url = "https://seerr.example/base", ApiKey = "test-secret" };
         _library.Setup(value => value.GetItemById<BaseItem>(_itemId, _viewerId)).Returns(new Movie { Id = _itemId, ProviderIds = new() { ["Tmdb"] = "123" } });
     }
@@ -57,6 +60,19 @@ public class SeerrTests : IDisposable
         Assert.DoesNotContain("private@example.org", json);
         Assert.DoesNotContain("do-not-return", json);
         Assert.Equal(0, _plugin.SaveCount);
+    }
+
+    [Fact]
+    public async Task RequesterProfilesRequireAnExactJellyfinIdAndACommonGroup()
+    {
+        var memberId = Guid.NewGuid();
+        _groups.Setup(value => value.GetVisibleMemberIds(_viewerId)).Returns(new[] { memberId });
+        _handler.Json = $$$"""{"mediaInfo":{"requests":[{"requestedBy":{"id":1,"username":"Alex","jellyfinUserId":"{{{memberId:N}}}"}},{"requestedBy":{"id":2,"username":"Alex","jellyfinUserId":"{{{Guid.NewGuid()}}}"}},{"requestedBy":{"id":3,"username":"Alex"}}]}}""";
+        var result = await _service.GetRequestersAsync(_itemId, _viewerId, default);
+        Assert.Equal(memberId, result.Single(user => user.Id == 1).ProfileUserId);
+        Assert.All(result.Where(user => user.Id != 1), user => Assert.Null(user.ProfileUserId));
+        _groups.Setup(value => value.GetVisibleMemberIds(_viewerId)).Returns(Array.Empty<Guid>());
+        Assert.All(await _service.GetRequestersAsync(_itemId, _viewerId, default), user => Assert.Null(user.ProfileUserId));
     }
 
     [Fact]

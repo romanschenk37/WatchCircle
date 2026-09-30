@@ -26,6 +26,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
             client.MaxResponseContentBufferSize = 2 * 1024 * 1024;
         }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         serviceCollection.AddSingleton<GroupManagementService>();
+        serviceCollection.AddSingleton<MemberLibraryService>();
         serviceCollection.AddSingleton<IEventConsumer<UserCreatedEventArgs>, UserCreatedConsumer>();
         serviceCollection.AddSingleton<IGroupMembershipService, GroupMembershipService>();
         serviceCollection.AddSingleton<IUserProfileService, UserProfileService>();

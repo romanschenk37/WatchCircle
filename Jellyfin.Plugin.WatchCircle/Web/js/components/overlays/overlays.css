@@ -179,3 +179,7 @@
         text-align: start;
     }
 }
+.wc-profile-name-link { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.wc-profile-name-link:hover { text-decoration: underline; }
+.wc-profile-avatar-link { display: inline-flex; border: 0; padding: 0; background: transparent; border-radius: 50%; cursor: pointer; }
+.wc-profile-name-link:focus-visible, .wc-profile-avatar-link:focus-visible { outline: 2px solid #bda0f5; outline-offset: 3px; }

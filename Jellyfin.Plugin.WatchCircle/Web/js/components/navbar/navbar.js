@@ -86,6 +86,22 @@
 
     function ensureNavbarButton() {
         let skinHeader = document.querySelector('.skinHeader');
+        if (skinHeader && ApiClient.getCurrentUserId && ApiClient.getCurrentUserId()) {
+            let header = skinHeader.querySelector('.headerRight');
+            if (header && !header.querySelector('.wc-profiles-navbar-button')) {
+                let profiles = document.createElement('button');
+                profiles.type = 'button';
+                profiles.className = 'headerButton headerButtonRight paper-icon-button-light wc-profiles-navbar-button';
+                profiles.title = 'WatchCircle: Personen & Fortschritt';
+                profiles.setAttribute('aria-label', profiles.title);
+                profiles.innerHTML = '<span class="material-icons" aria-hidden="true">people</span><span class="wc-profiles-navbar-label">WatchCircle</span>';
+                profiles.addEventListener('click', function () { WatchCircleAssets.showProfiles(); });
+                header.insertBefore(profiles, header.firstElementChild);
+            }
+        } else if (skinHeader) {
+            let profiles = skinHeader.querySelector('.wc-profiles-navbar-button');
+            if (profiles) profiles.remove();
+        }
         if (!skinHeader || skinHeader.querySelector('.' + NAVBAR_BUTTON_CLASS)) {
             return;
         }

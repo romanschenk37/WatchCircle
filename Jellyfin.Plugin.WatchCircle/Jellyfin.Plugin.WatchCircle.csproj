@@ -37,6 +37,8 @@
     <EmbeddedResource Include="Web\js\utils\progressUiRefresh.js" />
     <EmbeddedResource Include="Web\js\components\navbar\navbar.js" />
     <EmbeddedResource Include="Web\js\components\navbar\navbar.css" />
+    <EmbeddedResource Include="Web\js\components\profiles\profiles.js" />
+    <EmbeddedResource Include="Web\js\components\profiles\profiles.css" />
     <EmbeddedResource Include="Web\js\components\dialog\dialog.js" />
     <EmbeddedResource Include="Web\js\components\dialog\dialog.css" />
     <EmbeddedResource Include="Web\js\components\watchTogether\watchTogetherDialog.js" />

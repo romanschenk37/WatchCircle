@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.WatchCircle.Abstractions;
 using Jellyfin.Plugin.WatchCircle.Api;
 using Jellyfin.Plugin.WatchCircle.Configuration;
 using MediaBrowser.Controller.Entities;
@@ -25,6 +26,7 @@ public class SeerrService
     private readonly HttpClient _httpClient;
     private readonly ILibraryManager _libraryManager;
     private readonly ILogger<SeerrService> _logger;
+    private readonly IGroupMembershipService _groups;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SeerrService"/> class.
@@ -32,11 +34,13 @@ public class SeerrService
     /// <param name="httpClient">The bounded, non-redirecting HTTP client.</param>
     /// <param name="libraryManager">Jellyfin library access.</param>
     /// <param name="logger">The logger.</param>
-    public SeerrService(HttpClient httpClient, ILibraryManager libraryManager, ILogger<SeerrService> logger)
+    /// <param name="groups">Profile visibility.</param>
+    public SeerrService(HttpClient httpClient, ILibraryManager libraryManager, ILogger<SeerrService> logger, IGroupMembershipService groups)
     {
         _httpClient = httpClient;
         _libraryManager = libraryManager;
         _logger = logger;
+        _groups = groups;
     }
 
     /// <summary>
@@ -160,7 +164,7 @@ public class SeerrService
         try
         {
             using var result = await ReadAsync(settings, mediaType + "/" + tmdbId.ToString(CultureInfo.InvariantCulture), cancellationToken).ConfigureAwait(false);
-            return ParseRequesters(result.RootElement, seasonNumber);
+            return ParseRequesters(result.RootElement, seasonNumber, _groups.GetVisibleMemberIds(userId));
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException)
         {
@@ -195,7 +199,7 @@ public class SeerrService
         return url.EndsWith("/api/v1", StringComparison.OrdinalIgnoreCase) ? url[..^7] : url;
     }
 
-    private static IReadOnlyList<SeerrRequesterDto> ParseRequesters(JsonElement root, int? seasonNumber)
+    private static IReadOnlyList<SeerrRequesterDto> ParseRequesters(JsonElement root, int? seasonNumber, IReadOnlyList<Guid> visibleMembers)
     {
         var requesters = new Dictionary<int, SeerrRequesterDto>();
         if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("mediaInfo", out var media) || media.ValueKind != JsonValueKind.Object
@@ -236,6 +240,12 @@ public class SeerrService
                     .Select(field => user.TryGetProperty(field, out var text) && text.ValueKind == JsonValueKind.String ? text.GetString() : null)
                     .FirstOrDefault(text => !string.IsNullOrWhiteSpace(text) && !text.Contains('@', StringComparison.Ordinal));
                 requester = new SeerrRequesterDto { Id = userId, Name = name ?? "Seerr user " + userId.ToString(CultureInfo.InvariantCulture) };
+                if (user.TryGetProperty("jellyfinUserId", out var linkedId) && linkedId.ValueKind == JsonValueKind.String
+                    && Guid.TryParse(linkedId.GetString(), out var jellyfinId) && visibleMembers.Contains(jellyfinId))
+                {
+                    requester.ProfileUserId = jellyfinId;
+                }
+
                 requesters.Add(userId, requester);
             }
 

@@ -10,3 +10,7 @@
     height: 1.25em;
     font-size: 1.5rem;
 }
+
+.wc-profiles-navbar-button { display: inline-flex; align-items: center; gap: 6px; width: auto; flex-shrink: 0; }
+.wc-profiles-navbar-label { font-size: .8em; }
+@media (max-width: 600px) { .wc-profiles-navbar-label { display: none; } }

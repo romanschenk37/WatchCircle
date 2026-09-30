@@ -18,6 +18,9 @@ public class SeerrRequesterDto
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Gets or sets the linked Jellyfin profile, only for shared-group members.</summary>
+    public Guid? ProfileUserId { get; set; }
+
     /// <summary>
     /// Gets or sets requested seasons, empty for a movie.
     /// </summary>

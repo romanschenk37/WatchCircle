@@ -1,20 +1,20 @@
-# WatchCircle 1.0.5.0 — Seerr request attribution
+# WatchCircle 1.0.6.0 — Personen und Fortschrittsvergleich
 
-WatchCircle can now show **Requested by** for movies and series that were requested through Seerr.
+Der neue **WatchCircle**-Button in der Jellyfin-Weboberfläche zeigt alle Personen, mit denen du mindestens eine Gruppe teilst. Jede Person erscheint nur einmal.
 
-- Shows all requesters, including people outside your WatchCircle groups and people who have not started watching.
-- Each requester appears once. Series also show which seasons each person requested.
-- Progress rows keep their existing rules: only people sharing a group who have started the title appear there.
-- Request information can appear on its own before anyone has started watching.
-- Matches titles by their TMDB IDs and reads existing Seerr requests without storing an additional request history.
-- Seerr is optional and disabled by default. If it is unavailable, the existing watch progress display continues working.
+- Öffne ein Profil aus der Personenliste oder über einen Namen bzw. ein Profilbild in der WatchCircle-Kachel.
+- **Begonnen** zeigt angefangene Filme und Serien mit dem Fortschritt der Person und deinem eigenen Fortschritt.
+- **Abgeschlossen** zeigt gesehene Filme und Serien auf dem aktuellen Stand, ebenfalls mit deinem Fortschritt zum Vergleich.
+- **Favoriten** zeigt favorisierte Filme und Serien, die die Person noch nicht begonnen hat. Bereits begonnene oder abgeschlossene Favoriten erscheinen in ihrer jeweiligen Kategorie.
+- Suche, Film-/Serienfilter und schrittweises Erweitern größerer Listen sind enthalten.
+- Seerr-Antragsteller sind anklickbar, wenn Seerr ihre Jellyfin-ID liefert und ihr eine gemeinsame Gruppe habt. Andere Antragsteller bleiben als Text sichtbar.
 
-Configure it under **Dashboard → Plugins → WatchCircle → Seerr requests**: enable the option, enter your Seerr URL and API key, then click **Save and test connection**. The URL must be reachable from the Jellyfin server. The saved key is not returned to regular users or prefilled in the settings page.
+Serienfortschritt wird über alle für dich verfügbaren Folgen inklusive Specials berechnet. Fehlende/virtuelle Folgen zählen nicht; beide Personen verwenden dieselbe Gesamtzahl. Eine abgeschlossene Serie bedeutet, dass alle aktuell verfügbaren Folgen gesehen wurden. Neue Folgen können sie wieder unter „Begonnen“ einordnen. Die bestehende Detailkachel zeigt weiterhin die am weitesten begonnene Folge.
 
-The existing automatic group membership and shared progress card remain available. The inherited Watch together feature is still present.
+Profile lesen ausschließlich vorhandene Jellyfin-Fortschritte und Favoriten. Es wird keine zusätzliche Profil- oder Wiedergabehistorie gespeichert. Der Server prüft gemeinsame Gruppen und deine Bibliotheksberechtigungen. Die geerbte Funktion „Watch together“ bleibt weiterhin vorhanden.
 
-Validation: 29 automated tests, successful release build, JavaScript syntax checks and browser checks using simulated Seerr/Jellyfin data. Your actual Seerr instance has not been connected or tested yet.
+Prüfung: 42 automatisierte Tests erfolgreich, Release-Build ohne Fehler oder Warnungen, JavaScript-Syntaxprüfung und Browserprüfung mit simulierten Jellyfin-/Seerr-Daten. Der Test auf einem echten Jellyfin-Server steht noch aus.
 
-Update WatchCircle through the existing plugin catalog, restart Jellyfin when convenient, then reload the web client with **Ctrl + F5**.
+Update über den bestehenden Plugin-Katalog installieren, Jellyfin zu einem passenden Zeitpunkt neu starten und die Weboberfläche mit **Strg + F5** neu laden. Profile stehen in der Jellyfin-Weboberfläche zur Verfügung.
 
-Catalog: `https://raw.githubusercontent.com/romanschenk37/WatchCircle/master/manifest.json`
+Katalog: `https://raw.githubusercontent.com/romanschenk37/WatchCircle/master/manifest.json`
