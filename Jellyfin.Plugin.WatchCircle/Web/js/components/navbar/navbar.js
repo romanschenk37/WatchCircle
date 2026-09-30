@@ -89,20 +89,51 @@
 
     function ensureNavbarButton() {
         const authenticated = typeof ApiClient !== 'undefined' && ApiClient.getCurrentUserId && ApiClient.getCurrentUserId();
-        document.querySelectorAll('.skinHeader .headerRight').forEach(function (header) {
-            if (!authenticated) {
-                header.querySelectorAll('.wc-navbar-button, .wc-profiles-navbar-button').forEach(function (node) { node.remove(); });
-                return;
+        const mounts = authenticated ? findHeaderMounts() : [];
+        document.querySelectorAll('.wc-navbar-actions').forEach(function (actions) {
+            if (!mounts.some(function (mount) { return mount.element === actions.parentElement; })) actions.remove();
+        });
+        mounts.forEach(function (mount) {
+            let actions = mount.element.querySelector('.wc-navbar-actions');
+            if (!actions) {
+                actions = document.createElement('span');
+                actions.className = 'wc-navbar-actions' + (mount.modern ? ' wc-navbar-actions-modern' : '');
+                actions.appendChild(createProfilesButton());
+                actions.appendChild(createNavbarButton());
+                // Keep our nodes in one owned container; Jellyfin retains its own buttons.
+                mount.element.insertBefore(actions, mount.element.firstElementChild);
             }
-            let together = header.querySelector('.wc-navbar-button');
-            if (!together) { together = createNavbarButton(); header.insertBefore(together, header.firstElementChild); }
-            let profiles = header.querySelector('.wc-profiles-navbar-button');
-            if (!profiles) { profiles = createProfilesButton(); header.insertBefore(profiles, together); }
+            let together = actions.querySelector('.wc-navbar-button');
+            let profiles = actions.querySelector('.wc-profiles-navbar-button');
             together.title = t('WatchCircle: Watch together');
             together.setAttribute('aria-label', together.title);
             profiles.title = t('WatchCircle: People & progress');
             profiles.setAttribute('aria-label', profiles.title);
         });
+    }
+
+    function isVisible(element) {
+        return element && element.getClientRects().length > 0 && getComputedStyle(element).visibility !== 'hidden';
+    }
+
+    function findHeaderMounts() {
+        const mounts = [];
+        document.querySelectorAll('.skinHeader .headerRight').forEach(function (header) {
+            if (isVisible(header)) mounts.push({ element: header, modern: false });
+        });
+        // Modern Jellyfin keeps .skinHeader inside a display:none compatibility wrapper.
+        // Use stable toolbar classes and menu IDs, never localized labels or generated CSS names.
+        document.querySelectorAll('.MuiAppBar-root .MuiToolbar-root').forEach(function (toolbar) {
+            if (!isVisible(toolbar)) return;
+            const userButton = toolbar.querySelector('button[aria-controls="app-user-menu"]');
+            if (!userButton) return;
+            const anchor = toolbar.querySelector('[aria-controls="app-sync-play-menu"], [aria-controls="app-remote-play-menu"], a[href="#/search"]') || userButton;
+            const element = anchor.parentElement;
+            if (element && !mounts.some(function (mount) { return mount.element === element; })) {
+                mounts.push({ element: element, modern: true });
+            }
+        });
+        return mounts;
     }
 
     let scheduled = false;
@@ -118,7 +149,7 @@
     document.addEventListener(HEADER_RENDERED_EVENT, scheduleUpdate);
     document.addEventListener('viewshow', scheduleUpdate);
     window.addEventListener('hashchange', scheduleUpdate);
-    // Covers auth changes that do not replace DOM nodes, including late login.
+    // Covers auth and layout visibility changes that do not replace DOM nodes.
     setInterval(function () { if (!document.hidden) scheduleUpdate(); }, 2000);
     loadStylesheet();
     scheduleUpdate();

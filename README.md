@@ -64,7 +64,7 @@ Your own account is excluded from the poster overlays and the progress rows. Eac
 
 ### People and profiles
 
-The **WatchCircle** people button in the web client's header, next to the existing Watch together button, opens a searchable list of everyone sharing at least one group with you. It is added after sign-in and restored when Jellyfin replaces the header. Each person appears once; your own account is excluded. Clicking a person opens a comparison with your existing Jellyfin progress. Names and avatars in the shared progress card open the same profile.
+The **WatchCircle** people button in the web client's header, next to the existing Watch together button, opens a searchable list of everyone sharing at least one group with you. Both the classic header and the modern Jellyfin toolbar are supported. The buttons are added to the visible header after sign-in and restored when Jellyfin replaces it; hidden legacy compatibility headers are ignored. SyncPlay permission is not required. Each person appears once; your own account is excluded. Clicking a person opens a comparison with your existing Jellyfin progress. Names and avatars in the shared progress card open the same profile.
 
 Profiles have three exclusive categories, based on the selected person's data:
 

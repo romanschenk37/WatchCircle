@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WatchCircle — Jellyfin header regression fixture</title>
+    <style>
+        body { margin: 0; background: #101113; color: #eee; font: 16px system-ui, sans-serif; }
+        header, .skinHeader { background: #18191c; }
+        .MuiToolbar-root, .headerTop { display: flex; align-items: center; min-height: 64px; padding: 0 24px; gap: 12px; }
+        .headerLeft, .MuiStack-root { flex: 1; }
+        .headerRight, .headerControls { display: flex; align-items: center; }
+        .MuiIconButton-root, .headerButton { color: inherit; background: transparent; border: 0; padding: 10px; font: inherit; cursor: pointer; }
+        .MuiAvatar-root { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: #007f9f; border-radius: 50%; }
+        main { margin: 3em auto; max-width: 900px; padding: 1em; }
+        #cases { display: flex; flex-wrap: wrap; gap: 12px; }
+        #cases button { font: inherit; background: #263642; border: 1px solid #527388; color: inherit; border-radius: 5px; padding: 12px; cursor: pointer; }
+        #status { display: block; padding: 1.5em 0; color: #8bdae9; }
+        .test-label { color: #aaa; }
+    </style>
+</head>
+<body>
+    <div id="headers"></div>
+    <main>
+        <p class="test-label">LOKALE TESTANSICHT · KEINE VERBINDUNG ZU EINEM JELLYFIN-SERVER</p>
+        <h1>WatchCircle in der neuen Jellyfin-Kopfzeile</h1>
+        <p>Diese Ansicht bildet die neue sichtbare Kopfzeile und die alte versteckte Kopfzeile nach.</p>
+        <div id="cases">
+            <button data-layout="modern">Neue Kopfzeile</button>
+            <button data-layout="legacy">Klassische Kopfzeile</button>
+            <button data-layout="no-sync">Ohne SyncPlay</button>
+            <button data-layout="user-only">Nur Benutzermenü</button>
+            <button id="replace">Kopfzeile ersetzen</button>
+            <button id="logout">Abmelden</button>
+            <button id="login">Anmelden</button>
+            <button id="english">English</button>
+            <button id="german">Deutsch</button>
+        </div>
+        <output id="status" role="status"></output>
+        <output id="action" role="status"></output>
+    </main>
+    <script>
+        let signedIn = true;
+        let layout = 'modern';
+        // Structure follows Jellyfin AppHeader/AppToolbar: modern pages retain a hidden legacy header.
+        // Menu IDs come from AppUserMenu, AppSyncPlayMenu and AppRemotePlayMenu.
+        const legacy = '<div class="skinHeader"><div class="headerTop"><div class="headerLeft">Jellyfin</div><div class="headerRight"><button class="headerButton headerButtonRight headerSyncButton">SyncPlay</button><button class="headerButton headerButtonRight headerUserButton">Benutzermenü</button></div></div></div>';
+        const userButton = '<div class="MuiBox-root"><button type="button" class="MuiIconButton-root" aria-label="Benutzermenü" aria-controls="app-user-menu"><span class="MuiAvatar-root">●</span></button></div>';
+        function render() {
+            let html = legacy;
+            if (layout !== 'legacy') {
+                const sync = layout === 'modern' ? '<button class="MuiIconButton-root" aria-label="Synchronwiedergabe" aria-controls="app-sync-play-menu">♟♟</button>' : '';
+                const rest = layout !== 'user-only' ? '<button class="MuiIconButton-root" aria-label="Auf Gerät wiedergeben" aria-controls="app-remote-play-menu">▣</button><a class="MuiIconButton-root" aria-label="Suche" href="#/search">⌕</a>' : '';
+                html = '<div style="display:none">' + legacy + '</div><header class="MuiAppBar-root"><div class="MuiToolbar-root"><div class="MuiStack-root">Jellyfin</div><div class="MuiBox-root headerControls">' + sync + rest + '</div>' + (signedIn ? userButton : '') + '</div></header>';
+            }
+            document.getElementById('headers').innerHTML = html;
+        }
+        window.ApiClient = { getCurrentUserId: () => signedIn ? 'fixture-user' : null };
+        window.WatchCircleAssets = {
+            getUrl: path => '/WatchCircle/js/' + path,
+            showProfiles: () => { document.getElementById('action').textContent = 'Personenliste geöffnet'; }
+        };
+        window.WatchCircleWatchTogetherDialog = { show: () => { document.getElementById('action').textContent = 'Gemeinsam-schauen-Dialog geöffnet'; } };
+        document.querySelectorAll('[data-layout]').forEach(button => button.onclick = () => { layout = button.dataset.layout; render(); });
+        document.getElementById('replace').onclick = render;
+        document.getElementById('logout').onclick = () => { signedIn = false; render(); };
+        document.getElementById('login').onclick = () => { signedIn = true; render(); };
+        document.getElementById('english').onclick = () => { document.documentElement.lang = 'en-US'; };
+        document.getElementById('german').onclick = () => { document.documentElement.lang = 'de-CH'; };
+        render();
+        setInterval(() => {
+            const buttons = Array.from(document.querySelectorAll('.wc-navbar-button, .wc-profiles-navbar-button'));
+            const visible = buttons.filter(node => node.getClientRects().length > 0);
+            const expected = signedIn ? 2 : 0;
+            const ok = buttons.length === expected && visible.length === expected;
+            const text = (ok ? 'OK' : 'FEHLER') + ': ' + visible.length + ' sichtbare WatchCircle-Buttons, ' + (buttons.length - visible.length) + ' versteckte Buttons (' + layout + ').';
+            if (document.getElementById('status').textContent !== text) document.getElementById('status').textContent = text;
+        }, 250);
+    </script>
+    <script src="/WatchCircle/js/utils/i18n.js"></script>
+    <script src="/WatchCircle/js/components/navbar/navbar.js"></script>
+</body>
+</html>
