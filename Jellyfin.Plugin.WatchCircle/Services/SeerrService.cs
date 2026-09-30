@@ -120,6 +120,12 @@ public class SeerrService
     /// <param name="cancellationToken">Request cancellation.</param>
     /// <returns>One entry per Seerr requester, independent of watch groups or playback.</returns>
     public async Task<IReadOnlyList<SeerrRequesterDto>> GetRequestersAsync(Guid itemId, Guid userId, CancellationToken cancellationToken)
+        => await GetRequestersCoreAsync(itemId, userId, _groups.GetVisibleMemberIds(userId), cancellationToken).ConfigureAwait(false);
+
+    internal Task<IReadOnlyList<SeerrRequesterDto>> GetAdminRequestersAsync(Guid itemId, Guid adminId, IReadOnlyList<Guid> allUserIds, CancellationToken cancellationToken)
+        => GetRequestersCoreAsync(itemId, adminId, allUserIds, cancellationToken);
+
+    private async Task<IReadOnlyList<SeerrRequesterDto>> GetRequestersCoreAsync(Guid itemId, Guid userId, IReadOnlyList<Guid> visibleUserIds, CancellationToken cancellationToken)
     {
         var settings = GetSnapshot();
         if (!settings.Enabled || string.IsNullOrEmpty(settings.Url) || string.IsNullOrEmpty(settings.ApiKey) || userId == Guid.Empty)
@@ -164,7 +170,7 @@ public class SeerrService
         try
         {
             using var result = await ReadAsync(settings, mediaType + "/" + tmdbId.ToString(CultureInfo.InvariantCulture), cancellationToken).ConfigureAwait(false);
-            return ParseRequesters(result.RootElement, seasonNumber, _groups.GetVisibleMemberIds(userId));
+            return ParseRequesters(result.RootElement, seasonNumber, visibleUserIds);
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException)
         {

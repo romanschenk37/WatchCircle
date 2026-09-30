@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>WatchCircle</title></head>
+<body>
+    <div id="WatchCircleCleanupPage" data-role="page" class="page type-interior pluginConfigurationPage">
+        <div data-role="content"><div class="content-primary">
+            <h2>WatchCircle</h2>
+            <button id="wcOpenCleanupAdmin" type="button" class="raised emby-button">Library cleanup</button>
+            <p id="wcCleanupLoadError" role="status"></p>
+        </div></div>
+        <script>
+            (function () {
+                const page = document.getElementById('WatchCircleCleanupPage');
+                function label() {
+                    page.querySelector('#wcOpenCleanupAdmin').textContent = document.documentElement.lang.toLowerCase().startsWith('de') ? 'Bibliothek aufräumen' : 'Library cleanup';
+                }
+                function load(path, name) {
+                    if (window[name]) return Promise.resolve();
+                    return new Promise(function (resolve, reject) {
+                        const script = document.createElement('script'); script.src = ApiClient.getUrl('WatchCircle/js/' + path);
+                        script.onload = resolve; script.onerror = reject; document.head.appendChild(script);
+                    });
+                }
+                async function open() {
+                    label();
+                    try {
+                        await load('utils/i18n.js', 'WatchCircleI18n');
+                        await load('utils/assetUrl.js', 'WatchCircleAssets');
+                        await load('components/cleanup/cleanup.js', 'WatchCircleCleanup');
+                        await WatchCircleCleanup.show('admin');
+                    } catch (_) {
+                        page.querySelector('#wcCleanupLoadError').textContent = document.documentElement.lang.toLowerCase().startsWith('de') ? 'Laden fehlgeschlagen. Bitte erneut versuchen.' : 'Could not load. Please try again.';
+                    }
+                }
+                page.querySelector('#wcOpenCleanupAdmin').addEventListener('click', open);
+                page.addEventListener('viewshow', open);
+                label();
+            })();
+        </script>
+    </div>
+</body>
+</html>

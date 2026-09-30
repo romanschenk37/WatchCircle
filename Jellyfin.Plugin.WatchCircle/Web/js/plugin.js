@@ -227,6 +227,12 @@
 
         window[BOOTSTRAP_FLAG] = true;
         loadOverlayModule();
+        if (!document.getElementById('watchcircle-cleanup-script')) {
+            const cleanup = document.createElement('script');
+            cleanup.id = 'watchcircle-cleanup-script';
+            cleanup.src = WatchCircleAssets.getUrl('components/cleanup/cleanup.js');
+            document.head.appendChild(cleanup);
+        }
         loadPlaybackGateService();
         loadPlaybackStopService();
         loadWatchTogetherQueueService();

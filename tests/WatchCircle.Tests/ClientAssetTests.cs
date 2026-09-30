@@ -7,6 +7,18 @@ namespace WatchCircle.Tests;
 
 public class ClientAssetTests
 {
+    [Theory]
+    [InlineData("components/cleanup/cleanup.js", "application/javascript", "window.WatchCircleCleanup")]
+    [InlineData("components/cleanup/cleanup.css", "text/css", ".wc-clean-marker")]
+    public void CleanupAssetsAreEmbeddedAndServed(string path, string type, string expected)
+    {
+        var controller = new WatchCircleClientController(null!, null!, null!, null!, null!, NullLogger<WatchCircleClientController>.Instance);
+        var response = Assert.IsType<FileStreamResult>(controller.GetClientAsset(path));
+        Assert.Equal(type, response.ContentType);
+        using var reader = new StreamReader(response.FileStream);
+        Assert.Contains(expected, reader.ReadToEnd());
+    }
+
     [Fact]
     public void TranslationDependencyIsServedFromTheBuiltPlugin()
     {

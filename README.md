@@ -34,6 +34,16 @@ For the first test on Jellyfin 12.1, disable Binge Buddy and refresh the web cli
 
 ## How It Works
 
+### Optional library cleanup (1.1)
+
+**Dashboard → WatchCircle · Cleanup** opens a separate administration page. The feature is **disabled by default**; deletion defaults to **manual**. Administrators select libraries and configure inactivity, warning periods, Radarr/Sonarr connections and permanent protection. Normal WatchCircle group visibility stays unchanged.
+
+When enabled, a bin button opens pending feedback. Nominated posters carry a visible label and detail pages show a deletion-date banner. Users can change an earlier “I do not mind” response to “Please keep” in that banner. Episodes and seasons refer to their whole series.
+
+The workflow uses server-side Jellyfin events for activity from all clients, verifies provider IDs and file mappings before deletion, and keeps a minimal archive of watched flags for later re-additions. The extra cleanup data is separate from ordinary progress display.
+
+See **[configuration, data retention, backup and tested versions](docs/library-cleanup.md)** before enabling cleanup. Real Arr integration was tested on isolated generated media; end-to-end Jellyfin and physical TV verification are still pending.
+
 ### Groups
 
 A **group** is a named list of Jellyfin users on your server (for example, “Friday Night Crew” or “Roommates”). Groups are stored in the plugin configuration and managed from the dashboard.

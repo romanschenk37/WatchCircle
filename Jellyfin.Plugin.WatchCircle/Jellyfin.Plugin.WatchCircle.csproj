@@ -31,6 +31,9 @@
   <ItemGroup>
     <None Remove="Configuration\configPage.html" />
     <EmbeddedResource Include="Configuration\configPage.html" />
+    <EmbeddedResource Include="Configuration\cleanupPage.html" />
+    <EmbeddedResource Include="Web\js\components\cleanup\cleanup.js" />
+    <EmbeddedResource Include="Web\js\components\cleanup\cleanup.css" />
     <EmbeddedResource Include="Web\js\plugin.js" />
     <EmbeddedResource Include="Web\js\utils\assetUrl.js" />
     <EmbeddedResource Include="Web\js\utils\i18n.js" />

@@ -1,17 +1,20 @@
-# WatchCircle 1.0.10.0 — Gesamtfortschritt für Serien und Staffeln
+# WatchCircle 1.1.0.0 — Bibliothek aufräumen
 
-Serien und Staffeln zeigen jetzt den Fortschritt des gesamten ausgewählten Titels an, statt nur den Fortschritt einer einzelnen Folge. Das gilt auch für Serien in den Profilen und den Vergleich mit dem eigenen Fortschritt.
+Neuer optionaler Bereich mit eigenen Einstellungen und Verwaltung. **Standardmässig ausgeschaltet; Löschung zunächst manuell.**
 
-- **Serie:** beispielsweise „6 von 12 Folgen abgeschlossen (54 %)“, mit Gesamtbalken über alle verfügbaren Folgen inklusive Specials.
-- **Staffel:** dieselbe Anzeige, begrenzt auf die Folgen dieser Staffel.
-- **Einzelne Folge und Film:** weiterhin Laufzeitfortschritt in Minuten und Prozent.
-- Die zusätzliche Angabe von Staffel und Folge trägt jetzt **Begonnen** oder **Gesehen**. Sie zeigt die am weitesten begonnene Folge, nicht die nächste Folge.
-- Angefangene Folgen zählen anteilig zum Gesamtfortschritt. Übersprungene Folgen werden nicht als gesehen angenommen. 100 % wird erst angezeigt, wenn alle verfügbaren Folgen von Jellyfin als gesehen markiert sind.
-- Detailseiten und Profile verwenden dieselbe Berechnung und berücksichtigen dieselben für den Betrachter verfügbaren Folgen. Fehlende und virtuelle Folgen zählen nicht mit.
-- Deutsch und Englisch folgen weiterhin der Jellyfin-Anzeigesprache.
+- Konfigurierbare Mediatheken, Inaktivitätsfrist, Vorwarnfrist und Auswertungsintervall; konservative Startfrist für unbekannte Vorgeschichte.
+- Rückmeldungen beim Öffnen/Wiederaufnehmen der Weboberfläche und über einen dauerhaften Papierkorb-Menüpunkt.
+- **Vorgemerkte Poster sind markiert. Detailseiten zeigen einen Banner mit Löschdatum und eigener Antwort. Dort lässt sich auch ein früheres „Mir doch egal“ in „Bitte noch nicht löschen“ ändern.**
+- Aktivität aller Benutzer schützt ganze Serien beziehungsweise betroffene Filmsammlungen. Historische Antworten bleiben nachvollziehbar.
+- Dauerhafter Schutz für Filme, Serien und Sammlungen; eigene Admin-Kachel mit allen Benutzern, Gesamtfortschritt und Seerr-Anfragenden.
+- Radarr-/Sonarr-Verbindungen, Container-Pfadzuordnung und separate Importlisten-Ausschlüsse. Dateien werden ausschliesslich über die Dienste entfernt, ihre Papierkörbe bleiben wirksam.
+- Erneute Prüfungen direkt vor der Löschung, dauerhafte Protokolle und Überprüfung unterbrochener Vorgänge.
+- Kleines ergänzendes Gesehen-Archiv pro Benutzer und Film/Folge für eindeutig wiedererkannte Inhalte; neuere Ungesehen-Entscheidungen haben Vorrang.
 
-Es werden ausschließlich vorhandene Jellyfin-Fortschrittsdaten gelesen; für diese Anzeige wird keine zusätzliche Historie gespeichert.
+Die normalen WatchCircle-Gruppen und Fortschrittsanzeigen behalten ihre bisherigen Regeln. Die Aufräumfunktion speichert ihren Ablauf separat.
 
-Geprüft: 51 .NET-Tests, 16 JavaScript-Tests, Release-Build und lokale Browserprüfung der Serien-, Staffel-, Folgen- und Profilansicht. Die neue Version wurde noch nicht auf dem produktiven Jellyfin-Server getestet.
+Geprüft: automatisierte .NET- und JavaScript-Tests, lokale Browserprüfung sowie echte API-Löschungen erzeugter Testmedien mit **Radarr 6.3.0.10514** und **Sonarr 4.0.20.3014**, jeweils mit Papierkorbprüfung. Die vollständige Laufzeitprüfung auf Jellyfin 12.1 und Tests auf echter TV-Hardware stehen noch aus.
 
-Das Update steht im bestehenden Katalog bereit. Installation und den notwendigen Jellyfin-Neustart bitte selbst zu einem passenden Zeitpunkt durchführen. Danach die Weboberfläche mit **Strg + F5** neu laden.
+[Einrichtung, Datensicherung, Aufbewahrung und genaue Testgrenzen](https://github.com/romanschenk37/WatchCircle/blob/master/docs/library-cleanup.md).
+
+Installation und den dafür erforderlichen Jellyfin-Neustart bitte selbst zu einem passenden Zeitpunkt durchführen. Anschliessend die Weboberfläche vollständig neu laden. Dein produktiver Server wurde nicht verändert oder neugestartet.

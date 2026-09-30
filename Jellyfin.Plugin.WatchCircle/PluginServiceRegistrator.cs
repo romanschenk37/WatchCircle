@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using Jellyfin.Data.Events.Users;
 using Jellyfin.Plugin.WatchCircle.Abstractions;
+using Jellyfin.Plugin.WatchCircle.Cleanup;
 using Jellyfin.Plugin.WatchCircle.Infrastructure;
 using Jellyfin.Plugin.WatchCircle.Services;
 using MediaBrowser.Controller;
@@ -20,6 +21,13 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     /// <inheritdoc />
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
+        serviceCollection.AddHttpClient("WatchCircle.Arr", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+            client.MaxResponseContentBufferSize = 16 * 1024 * 1024;
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        serviceCollection.AddSingleton<CleanupService>();
+        serviceCollection.AddHostedService(provider => provider.GetRequiredService<CleanupService>());
         serviceCollection.AddHttpClient<SeerrService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(5);

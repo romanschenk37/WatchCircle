@@ -5,6 +5,7 @@
     // including its automatic-language setting. Do not use the server metadata language.
     // https://github.com/jellyfin/jellyfin-web/blob/master/src/lib/globalize/index.js
     const german = {
+        "Library cleanup": "Bibliothek aufräumen",
         "Unknown media": "Unbekannter Titel",
         "Started movies": "Begonnene Filme",
         "Started series": "Begonnene Serien",

@@ -56,6 +56,14 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
                 EnableInMainMenu = true,
                 MenuIcon = "groups",
                 EmbeddedResourcePath = string.Format(CultureInfo.InvariantCulture, "{0}.Configuration.configPage.html", GetType().Namespace)
+            },
+            new PluginPageInfo
+            {
+                Name = "WatchCircleCleanup",
+                DisplayName = "WatchCircle · Cleanup",
+                EnableInMainMenu = true,
+                MenuIcon = "auto_delete",
+                EmbeddedResourcePath = string.Format(CultureInfo.InvariantCulture, "{0}.Configuration.cleanupPage.html", GetType().Namespace)
             }
         ];
     }
