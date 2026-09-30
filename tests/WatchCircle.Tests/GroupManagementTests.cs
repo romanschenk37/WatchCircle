@@ -89,6 +89,7 @@ public class GroupManagementTests
     {
         var group = AddGroup(true);
         var userId = Guid.NewGuid();
+        _users.Add(userId);
         _groups.AddNewUser(userId);
         _groups.AddNewUser(userId);
         _groups.AddNewUser(Guid.Empty);
@@ -146,7 +147,9 @@ public class GroupManagementTests
         var created = _groups.CreateGroup("  Manual  ");
         Assert.NotNull(created);
         Assert.Null(_groups.CreateGroup("manual"));
-        _groups.AddNewUser(Guid.NewGuid());
+        var newUserId = Guid.NewGuid();
+        _users.Add(newUserId);
+        _groups.AddNewUser(newUserId);
         Assert.True(_groups.DeleteGroup(created.Value));
         Assert.Same(history, _plugin.Configuration.WatchTogether);
         Assert.Same(existingGroups, _plugin.Configuration.Groups);
@@ -159,6 +162,7 @@ public class GroupManagementTests
     {
         var viewer = Guid.NewGuid();
         var newcomer = Guid.NewGuid();
+        _users.UnionWith(new[] { viewer, newcomer });
         AddGroup(true).MemberUserIds.Add(viewer);
         AddGroup(true).MemberUserIds.Add(viewer);
         _groups.AddNewUser(newcomer);
@@ -208,6 +212,73 @@ public class GroupManagementTests
         })));
         Assert.Equal(newIds.Order(), group.MemberUserIds.Order());
         Assert.Equal(newIds.Order(), _plugin.ReadSaved().Groups.Single().MemberUserIds.Order());
+    }
+
+    [Fact]
+    public async Task DeletedUserEventRemovesEveryMembershipAndPreservesOtherSettings()
+    {
+        var deleted = new User("Deleted viewer", "auth", "reset");
+        var survivor = Guid.NewGuid();
+        _users.Add(survivor);
+        var automatic = AddGroup(true);
+        var manual = AddGroup(false);
+        automatic.MemberUserIds.AddRange(new[] { deleted.Id, survivor, deleted.Id });
+        manual.MemberUserIds.Add(deleted.Id);
+        var history = _plugin.Configuration.WatchTogether;
+        var seerr = _plugin.Configuration.Seerr;
+        var services = new ServiceCollection();
+        services.AddSingleton(_userManager.Object);
+        new PluginServiceRegistrator().RegisterServices(services, Mock.Of<IServerApplicationHost>());
+        using var provider = services.BuildServiceProvider();
+        var consumer = provider.GetRequiredService<IEventConsumer<UserDeletedEventArgs>>();
+        await consumer.OnEvent(new UserDeletedEventArgs(deleted));
+        await consumer.OnEvent(new UserDeletedEventArgs(deleted));
+        _groups.AddNewUser(deleted.Id); // A delayed creation event cannot re-enroll a deleted account.
+        Assert.Equal(new[] { survivor }, automatic.MemberUserIds);
+        Assert.Empty(manual.MemberUserIds);
+        Assert.Equal(1, _plugin.SaveCount);
+        Assert.Same(history, _plugin.Configuration.WatchTogether);
+        Assert.Same(seerr, _plugin.Configuration.Seerr);
+        Assert.True(_plugin.ReadSaved().Groups[0].AutoAddNewUsers);
+    }
+
+    [Fact]
+    public void ReadingGroupsRepairsHistoricalOrphansAndDuplicateCountsOnlyOnce()
+    {
+        var live = Enumerable.Range(0, 6).Select(_ => Guid.NewGuid()).ToArray();
+        _users.UnionWith(live);
+        var group = AddGroup(true);
+        group.MemberUserIds.AddRange(live.Append(Guid.NewGuid()));
+        Assert.Equal(6, _groups.GetGroups().Single().MemberUserIds.Count);
+        Assert.Equal(6, _plugin.ReadSaved().Groups[0].MemberUserIds.Count);
+        Assert.Equal(1, _plugin.SaveCount);
+        _groups.GetGroups();
+        Assert.Equal(1, _plugin.SaveCount);
+        group.MemberUserIds.AddRange(new[] { live[0], Guid.Empty });
+        var detached = _groups.GetGroups().Single();
+        Assert.Equal(6, detached.MemberUserIds.Count);
+        detached.MemberUserIds.Clear();
+        Assert.Equal(6, group.MemberUserIds.Count);
+    }
+
+    [Fact]
+    public void AStaleSettingsPageCannotReintroduceADeletedAccount()
+    {
+        var deleted = Guid.NewGuid(); var survivor = Guid.NewGuid();
+        _users.Add(survivor);
+        var group = AddGroup(false); group.MemberUserIds.AddRange(new[] { deleted, survivor });
+        _groups.UpdateGroup(group.Id, new UpdateGroupRequest { AddedUserIds = new[] { deleted }, AutoAddNewUsers = true });
+        Assert.Equal(new[] { survivor }, _plugin.ReadSaved().Groups.Single().MemberUserIds);
+    }
+
+    [Fact]
+    public void FailedAccountLookupDoesNotRemoveAnyMembers()
+    {
+        var group = AddGroup(false); group.MemberUserIds.Add(Guid.NewGuid());
+        _userManager.Setup(manager => manager.GetUsersIds()).Throws(new InvalidOperationException("User store unavailable"));
+        Assert.Throws<InvalidOperationException>(() => _groups.GetGroups());
+        Assert.Single(group.MemberUserIds);
+        Assert.Equal(0, _plugin.SaveCount);
     }
 
     private WatchGroup AddGroup(bool autoAdd)

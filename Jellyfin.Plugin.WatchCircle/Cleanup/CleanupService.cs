@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.WatchCircle.Cleanup;
 
 /// <summary>Optional server-side cleanup workflow; ordinary WatchCircle visibility is untouched.</summary>
-public sealed class CleanupService : BackgroundService
+public sealed class CleanupService : IHostedService, IDisposable
 {
     private readonly CleanupStore _store;
     private readonly ICleanupLibrary _library;
@@ -30,6 +30,8 @@ public sealed class CleanupService : BackgroundService
     private readonly IUserDataManager? _userData;
     private readonly ILibraryManager? _jellyfin;
     private readonly SeerrService? _seerr;
+    private int _settingsRevision;
+    private volatile bool _evaluationReady;
 
     /// <summary>Initializes a new instance of the <see cref="CleanupService"/> class.</summary>
     /// <param name="paths">Persistent plugin configuration directory.</param>
@@ -59,6 +61,10 @@ public sealed class CleanupService : BackgroundService
 
     internal bool Enabled => _store.Fault is null && _store.Read().Settings.Enabled;
 
+    internal int DefaultEvaluationIntervalHours => Math.Clamp(_store.Read().Settings.IntervalHours, 1, 744);
+
+    internal string? StorageFault => _store.Fault;
+
     internal object GetSettings()
     {
         var settings = _store.Read().Settings;
@@ -73,10 +79,10 @@ public sealed class CleanupService : BackgroundService
 
     internal void SaveSettings(CleanupSettings settings)
     {
-        if (settings.InactivityMonths is < 1 or > 120 || settings.WarningDays is < 1 or > 3650 || settings.IntervalHours is < 1 or > 744
+        if (settings.InactivityMonths is < 1 or > 120 || settings.WarningDays is < 1 or > 3650
             || (settings.Enabled && settings.LibraryIds.Count == 0))
         {
-            throw new ArgumentException("Choose libraries, 1–120 months of inactivity, 1–3650 warning days and a 1–744 hour interval.");
+            throw new ArgumentException("Choose libraries, 1–120 months of inactivity and 1–3650 warning days.");
         }
 
         _store.Change(state =>
@@ -94,7 +100,11 @@ public sealed class CleanupService : BackgroundService
                 }
             }
 
+            // The old interval seeds Jellyfin's default trigger; the scheduler owns future changes.
+            settings.IntervalHours = state.Settings.IntervalHours;
             state.Settings = CleanupStore.Clone(settings);
+            _settingsRevision++;
+            _evaluationReady = false;
             foreach (var entry in state.Entries)
             {
                 entry.Revision++;
@@ -279,13 +289,18 @@ public sealed class CleanupService : BackgroundService
         return new { Id = entry?.Id, Protected = entry?.Protected ?? false, EffectiveProtection = entry is not null && CleanupRules.IsProtected(state, entry) };
     }
 
-    internal async Task EvaluateAsync(CancellationToken cancellationToken)
+    internal async Task EvaluateAsync(CancellationToken cancellationToken, IProgress<double>? progress = null)
     {
         await _operations.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            _evaluationReady = false;
+            var settingsRevision = _store.Locked(() => _settingsRevision);
+            progress?.Report(0);
+            cancellationToken.ThrowIfCancellationRequested();
             await VerifyPendingAsync(cancellationToken).ConfigureAwait(false);
             var inventory = _library.Inventory();
+            cancellationToken.ThrowIfCancellationRequested();
             _store.Change(state =>
             {
                 CleanupRules.Reconcile(state, inventory, _time.GetUtcNow());
@@ -293,13 +308,18 @@ public sealed class CleanupService : BackgroundService
             });
             if (!Enabled)
             {
+                progress?.Report(100);
                 return;
             }
 
-            foreach (var entry in _store.Read().Entries.Where(value => value.Present && value.Media.Kind != "Collection"))
+            var entries = _store.Read().Entries.Where(value => value.Present && value.Media.Kind != "Collection").ToArray();
+            progress?.Report(10);
+            var processed = 0;
+            foreach (var entry in entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var states = _library.ReadStates(entry.Media);
+                cancellationToken.ThrowIfCancellationRequested();
                 Restore(entry, states);
                 _store.Change(state =>
                 {
@@ -320,14 +340,44 @@ public sealed class CleanupService : BackgroundService
 
                     return true;
                 });
+                progress?.Report(10 + (80d * ++processed / entries.Length));
             }
 
-            _store.Change(state =>
+            cancellationToken.ThrowIfCancellationRequested();
+            _store.Locked(() =>
             {
-                CleanupRules.Evaluate(state, _time.GetUtcNow());
-                state.Error = null;
+                if (_settingsRevision != settingsRevision)
+                {
+                    throw new InvalidOperationException("Cleanup settings changed during evaluation. Run the evaluation again.");
+                }
+
+                _store.Change(state =>
+                {
+                    CleanupRules.Evaluate(state, _time.GetUtcNow());
+                    state.Error = null;
+                    return true;
+                });
+                _evaluationReady = true;
                 return true;
             });
+            progress?.Report(100);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            if (_store.Fault is null)
+            {
+                _store.Change(state =>
+                {
+                    state.Error = SafeError(ex);
+                    return true;
+                });
+            }
+
+            throw;
         }
         finally
         {
@@ -375,18 +425,91 @@ public sealed class CleanupService : BackgroundService
         await _operations.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            if (adminId == Guid.Empty && !_evaluationReady)
+            {
+                throw new InvalidOperationException("Automatic deletion requires a successful evaluation since startup and the latest settings change.");
+            }
+
             var plan = _store.Read().Plans.Single(value => value.Id == planId && value.UserId == adminId);
-            if (plan.CreatedAt < _time.GetUtcNow().AddMinutes(-15))
+            await ExecutePlanCoreAsync(plan, adminId == Guid.Empty, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _operations.Release();
+        }
+    }
+
+    private async Task ExecutePlanCoreAsync(CleanupPlan plan, bool automatic, CancellationToken cancellationToken)
+    {
+        if (plan.CreatedAt < _time.GetUtcNow().AddMinutes(-15))
+        {
+            throw new InvalidOperationException("The confirmation expired. Review the selection again.");
+        }
+
+        foreach (var target in plan.Targets)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await DeleteTargetAsync(target, automatic, cancellationToken).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        _store.Change(state => state.Plans.RemoveAll(value => value.Id == plan.Id));
+    }
+
+    internal async Task DeleteAutomaticallyAsync(CancellationToken cancellationToken, IProgress<double>? progress = null)
+    {
+        await _operations.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_store.Fault is not null)
             {
-                throw new InvalidOperationException("The confirmation expired. Review the selection again.");
+                throw new InvalidOperationException(_store.Fault);
             }
 
-            foreach (var target in plan.Targets)
+            var state = _store.Read();
+            if (!state.Settings.Enabled || !state.Settings.AutomaticDeletion)
             {
-                await DeleteTargetAsync(target, adminId == Guid.Empty, cancellationToken).ConfigureAwait(false);
+                progress?.Report(100);
+                return;
             }
 
-            _store.Change(state => state.Plans.RemoveAll(value => value.Id == plan.Id));
+            progress?.Report(0);
+            if (!_evaluationReady || state.Error is not null)
+            {
+                throw new InvalidOperationException("Run 'Library cleanup: Evaluate titles' successfully before automatic deletion. An evaluation is required after startup, settings changes or an interrupted evaluation.");
+            }
+
+            var entries = state.Entries.Where(value => value.Present && value.Media.Kind != "Collection"
+                && value.DeleteAt <= _time.GetUtcNow() && value.NominationId.HasValue && value.Error is null).ToArray();
+            var processed = 0;
+            foreach (var entry in entries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var current = _store.Read();
+                if (!current.Settings.Enabled || !current.Settings.AutomaticDeletion)
+                {
+                    break;
+                }
+
+                if (!_evaluationReady || current.Error is not null)
+                {
+                    throw new InvalidOperationException("Cleanup settings or evaluation status changed. Run 'Library cleanup: Evaluate titles' again before automatic deletion.");
+                }
+
+                var plan = Plan(entry.Id, Guid.Empty);
+                await ExecutePlanCoreAsync(plan, true, cancellationToken).ConfigureAwait(false);
+                var error = _store.Read().Entries.Single(value => value.Id == entry.Id).Error;
+                if (error is not null)
+                {
+                    throw new InvalidOperationException(error);
+                }
+
+                progress?.Report(90d * ++processed / entries.Length);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            progress?.Report(100);
         }
         finally
         {
@@ -451,6 +574,7 @@ public sealed class CleanupService : BackgroundService
 
             Task request = _store.Locked(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var finalInventory = _library.Inventory();
                 _store.Change(next =>
                 {
@@ -460,7 +584,7 @@ public sealed class CleanupService : BackgroundService
                 var current = _store.Read();
                 var latest = current.Entries.Single(value => value.Id == entry.Id);
                 CleanupRules.CheckDeletion(current, latest, target, _time.GetUtcNow());
-                if ((automatic && !current.Settings.AutomaticDeletion)
+                if ((automatic && (!current.Settings.AutomaticDeletion || !_evaluationReady))
                     || Connection(current, latest).Url != connection.Url || Connection(current, latest).ApiKey != connection.ApiKey
                     || _library.IsPlaying(CleanupRules.Scope(current, latest)))
                 {
@@ -485,7 +609,7 @@ public sealed class CleanupService : BackgroundService
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or UnauthorizedAccessException or InvalidOperationException or System.Text.Json.JsonException or OperationCanceledException)
         {
-            if (_store.Fault is not null)
+            if (_store.Fault is not null || (job is null && ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
             {
                 throw;
             }
@@ -503,6 +627,7 @@ public sealed class CleanupService : BackgroundService
 
                 return true;
             });
+            cancellationToken.ThrowIfCancellationRequested();
         }
     }
 
@@ -730,8 +855,9 @@ public sealed class CleanupService : BackgroundService
     }
 
     /// <inheritdoc />
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (_userData is not null)
         {
             _userData.UserDataSaved += OnUserDataSaved;
@@ -742,72 +868,35 @@ public sealed class CleanupService : BackgroundService
             _jellyfin.ItemAdded += OnItemAdded;
         }
 
-        await Task.Yield();
+        return Task.CompletedTask;
+    }
 
-        try
+    /// <inheritdoc />
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        Unsubscribe();
+        return Task.CompletedTask;
+    }
+
+    private void Unsubscribe()
+    {
+        if (_userData is not null)
         {
-            var firstRun = true;
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    var state = _store.Read();
-                    if (Enabled && (firstRun || !state.LastEvaluation.HasValue || state.LastEvaluation.Value.AddHours(state.Settings.IntervalHours) <= _time.GetUtcNow()))
-                    {
-                        await EvaluateAsync(stoppingToken).ConfigureAwait(false);
-                    }
-
-                    firstRun = false;
-                    state = _store.Read();
-                    if (Enabled && state.Settings.AutomaticDeletion && state.Error is null)
-                    {
-                        foreach (var entry in state.Entries.Where(value => value.Present && value.DeleteAt <= _time.GetUtcNow() && value.NominationId.HasValue && value.Error is null))
-                        {
-                            var plan = Plan(entry.Id, Guid.Empty);
-                            await ExecutePlanAsync(plan.Id, Guid.Empty, stoppingToken).ConfigureAwait(false);
-                        }
-                    }
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "WatchCircle cleanup evaluation failed; no further automatic deletion in this run");
-                    if (_store.Fault is null)
-                    {
-                        _store.Change(state =>
-                        {
-                            state.Error = SafeError(ex);
-                            return true;
-                        });
-                    }
-                }
-
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken).ConfigureAwait(false);
-            }
+            _userData.UserDataSaved -= OnUserDataSaved;
         }
-        finally
-        {
-            if (_userData is not null)
-            {
-                _userData.UserDataSaved -= OnUserDataSaved;
-            }
 
-            if (_jellyfin is not null)
-            {
-                _jellyfin.ItemAdded -= OnItemAdded;
-            }
+        if (_jellyfin is not null)
+        {
+            _jellyfin.ItemAdded -= OnItemAdded;
         }
     }
 
     private static ArrConnection Connection(CleanupState state, CleanupEntry entry) => entry.Media.Kind == "Series" ? state.Settings.Sonarr : state.Settings.Radarr;
 
     /// <inheritdoc />
-    public override void Dispose()
+    public void Dispose()
     {
-        base.Dispose();
+        Unsubscribe();
         _operations.Dispose();
     }
 

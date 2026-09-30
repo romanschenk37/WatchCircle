@@ -57,6 +57,8 @@ A **group** is a named list of Jellyfin users on your server (for example, “Fr
 
 Groups do **not** change Jellyfin permissions or libraries. They only define which users WatchCircle treats as your “buddies” for progress display.
 
+Deleting a Jellyfin account removes it from every WatchCircle group. Loading group settings also repairs historical references to deleted accounts and duplicate IDs, so the displayed member count reflects the existing members. Stale settings pages cannot add deleted accounts back.
+
 Automatic membership listens to Jellyfin's user-created event and saves the new member in the existing group configuration. It does not create a separate user database or collect any watch data. Saving an open group editor preserves users added automatically in the meantime.
 
 ### What counts as “started”

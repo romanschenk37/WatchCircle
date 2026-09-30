@@ -7,14 +7,32 @@ WatchCircle 1.1.0.0 ergänzt einen separaten, optionalen Bereich. Er ist nach de
 **Dashboard → WatchCircle · Cleanup** oder der Link **Bibliothek aufräumen** in den WatchCircle-Einstellungen öffnen die Verwaltung.
 
 1. Unter **Einstellungen** aktivieren und Mediatheken auswählen.
-2. Inaktivitätsfrist, Vorwarnfrist und Auswertungsintervall festlegen. Vorgaben: **3 Kalendermonate, 30 Tage, 24 Stunden**.
+2. Inaktivitätsfrist und Vorwarnfrist festlegen. Vorgaben: **3 Kalendermonate und 30 Tage**. Die getrennten Zeitpläne für Auswertung und automatische Löschung ab Version 1.1.3.0 unter **Dashboard → Geplante Aufgaben → WatchCircle** einstellen.
 3. Vom Jellyfin-Server erreichbare Radarr-/Sonarr-URLs und API-Schlüssel speichern. Bei einer URL-Änderung ist der Schlüssel erneut nötig. **Gespeicherte Verbindung testen** prüft die gespeicherte Verbindung.
 4. Unterschiedliche Containerpfade als Stammordner zuordnen, etwa Jellyfin `/media/movies` → Radarr `/movies`. Ohne Zuordnung werden gleiche Pfade vorausgesetzt. Mehrdeutige Zuordnungen werden abgelehnt.
 5. **Jetzt auswerten** liest den Bestand und prüft unterbrochene Vorgänge. Eine leere Kandidatenliste unmittelbar nach Aktivierung ist wegen der konservativen Startfrist normal.
 
 Papierkörbe werden in Radarr/Sonarr eingestellt. Importlisten-Ausschlüsse sind pro Dienst separat einstellbar und zunächst aus. Automatische Löschung muss zusätzlich ausdrücklich aktiviert werden.
 
-Die regelmässige Auswertung läuft bereits als WatchCircle-Hintergrunddienst, auch ohne geöffnete Weboberfläche. Bei aktivierter Funktion wertet er nach dem Serverstart aus und danach im eingestellten Intervall (standardmässig 24 Stunden). Er prüft jede Minute, ob eine Auswertung fällig ist; nach erstmaliger Aktivierung beginnt sie daher normalerweise innerhalb einer Minute. In Jellyfins Liste **Geplante Aufgaben** gibt es dafür keinen separaten Eintrag. **Jetzt auswerten** startet eine zusätzliche Auswertung. Das Vormerken funktioniert auch bei ausgeschalteter automatischer Löschung.
+## Geplante Auswertung und manueller Test
+
+Ab Version 1.1.3.0 verwaltet Jellyfin die regelmässige Auswertung unter **Dashboard → Geplante Aufgaben → WatchCircle → Bibliothek aufräumen: Inhalte prüfen**. Bei englischer Serversprache heisst die Aufgabe **Library cleanup: Evaluate titles**. Der Name richtet sich wie bei anderen serverseitigen Aufgaben nach Jellyfins Serversprache. Die Aufgabe bleibt sichtbar, wenn die Aufräumfunktion ausgeschaltet ist; ein Start führt dann keine Auswertung aus.
+
+Zum Testen zuerst die Aufräumfunktion aktivieren und Mediatheken auswählen, anschliessend bei der Aufgabe auf **Starten** drücken. Jellyfin zeigt Fortschritt und letzten Lauf an; laufende Auswertungen können abgebrochen werden. Die Ergebnisse stehen danach in der WatchCircle-Verwaltung. **Jetzt auswerten** bleibt als zusätzlicher direkter Start in WatchCircle verfügbar. Beide Wege verwenden dieselbe Auswertung und Ausführungssperre. Die Start- und Vorwarnfristen gelten auch bei manuellen Tests.
+
+Der Standardzeitplan der Auswertung enthält einen Start bei Serverstart und ein Intervall. Beim Upgrade wird das bisher gespeicherte WatchCircle-Intervall als Vorgabe verwendet, bei neuer Einrichtung **24 Stunden**. Angepasste Jellyfin-Auslöser werden vom Plugin nicht überschrieben. Die Aufräumeinstellungen enthalten deshalb kein zweites Intervallfeld mehr.
+
+Die Auswertungsaufgabe selbst startet keine Löschungen. Das Vormerken funktioniert auch bei ausgeschalteter automatischer Löschung.
+
+## Separate Aufgabe für automatische Löschung
+
+Unter **Dashboard → Geplante Aufgaben → WatchCircle → Bibliothek aufräumen: Fällige Inhalte löschen** (**Library cleanup: Delete due titles**) lässt sich die automatische Löschung unabhängig planen und manuell starten. Vorgabe ist **stündlich**, ohne Startauslöser beim Serverstart. Die Aufgabe bleibt sichtbar, macht aber nur dann etwas, wenn **Bibliothek aufräumen aktivieren** und **Berechtigte Titel automatisch löschen** beide eingeschaltet sind. Ein manueller Start umgeht diese Einstellungen nicht. Bestehende Einstellungen bleiben beim Update erhalten; automatische Löschung ist bei neuer Einrichtung ausgeschaltet.
+
+Vor einem Löschlauf muss seit dem Serverstart und der letzten Einstellungsänderung eine Auswertung erfolgreich abgeschlossen sein. Nach fehlgeschlagener oder abgebrochener Auswertung ist ebenfalls eine neue erfolgreiche Auswertung erforderlich. Fehlt sie, meldet die Löschaufgabe einen Fehler mit entsprechendem Hinweis. Sie wertet nicht selbst neue Kandidaten aus. Die gemeinsame Ausführungssperre verhindert gleichzeitige Auswertungen und Löschläufe.
+
+Die Aufgabe verarbeitet bereits fällige Vormerkungen und verwendet die vorhandenen Prüfungen und Sicherungen. Vor dem Versand wird die Aktivierung erneut geprüft; Fristen, Schutz, geänderte Aktivität und laufende oder pausierte Wiedergaben gelten weiterhin. Fehler werden im Löschprotokoll und Aufgabenverlauf sichtbar. Abbrechen verhindert weitere Aufträge, kann bereits an Radarr/Sonarr versendete Aufträge jedoch nicht zurückrufen.
+
+Beide bisherigen Hintergrundtimer entfallen. Ohne Jellyfin-Auslöser und ohne manuellen Start gibt es keine versteckte periodische Auswertung oder automatische Löschung. Die serverseitige Erfassung relevanter Interaktionen bleibt bei aktivierter Aufräumfunktion bestehen.
 
 ## Verwaltungsübersicht
 
@@ -37,6 +55,8 @@ Ein Papierkorb-Symbol oben führt jederzeit zu offenen Rückmeldungen. Beim Öff
 Vorgemerkte Poster tragen eine sichtbare Warnmarkierung. Ein Detailbanner zeigt das frühestmögliche Löschdatum, die eigene Antwort und die Antwortknöpfe. Nach geschlossenem Popup oder früherem **Mir doch egal** lässt sich dort weiterhin **Bitte noch nicht löschen** wählen. Staffel- und Folgenseiten beziehen sich auf die ganze Serie. Im manuellen Modus ist das Datum die früheste Berechtigung, kein garantierter Löschzeitpunkt.
 
 Eine veraltete Ansicht kann keine aufgehobene Vormerkung wieder aktivieren. Bereits an Arr gesendete Aufträge können nicht per Rückmeldung zurückgerufen werden; der Banner zeigt dann die ausstehende Bestätigung. Statusänderungen erscheinen bei Navigation, Rückmeldungen und der nächsten Webprüfung, normalerweise innerhalb von 30 Sekunden. Normale Benutzer sehen nur zugängliche Titel und ihre eigene Antwort.
+
+Das Erreichen des Löschdatums beendet offene Rückmeldungen nicht. Solange der Inhalt vorhanden, die Vormerkung offen und kein Löschauftrag versendet ist, werden Benutzer ohne Antwort weiterhin beim Öffnen beziehungsweise Zurückkehren gefragt. Auch nach dem Datum kann **Mir doch egal** im Titelbanner zu **Bitte noch nicht löschen** geändert werden.
 
 ## Aktivität und Startfristen
 

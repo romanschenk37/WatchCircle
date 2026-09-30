@@ -31,7 +31,8 @@
         'Movie and all managed media files.': 'Film und alle verwalteten Mediendateien.',
         'Deadlines, protection and activity are checked again before deletion.': 'Fristen, Schutz und Aktivität werden vor der Löschung erneut geprüft.',
         'Enable library cleanup': 'Bibliothek aufräumen aktivieren', 'Months without interaction': 'Monate ohne Interaktion',
-        'Warning period in days': 'Vorwarnfrist in Tagen', 'Evaluation interval in hours': 'Auswertungsintervall in Stunden',
+        'Warning period in days': 'Vorwarnfrist in Tagen',
+        'Run evaluations and automatic deletions or edit their schedules under Dashboard → Scheduled Tasks → WatchCircle.': 'Auswertungen und automatische Löschungen starten oder ihre Zeitpläne ändern: Dashboard → Geplante Aufgaben → WatchCircle.',
         'Libraries': 'Mediatheken', 'Delete eligible titles automatically': 'Berechtigte Titel automatisch löschen',
         'When enabled, due titles and files are deleted without individual confirmation. Entire series are removed from Sonarr, including future monitoring.': 'Wenn aktiviert, werden fällige Titel und Dateien ohne einzelne Bestätigung gelöscht. Ganze Serien werden aus Sonarr entfernt, einschliesslich der Überwachung zukünftiger Folgen.',
         'Unknown history starts with a full inactivity period. Existing favorites alone do not restart it.': 'Bei unbekannter Vorgeschichte beginnt eine vollständige Inaktivitätsfrist. Bereits vorhandene Favoriten allein starten sie nicht neu.',
@@ -385,7 +386,7 @@
         message(form, t('Unknown history starts with a full inactivity period. Existing favorites alone do not restart it.'));
         fields.InactivityMonths = input(form, 'Months without interaction', value.InactivityMonths, 'number', 1, 120);
         fields.WarningDays = input(form, 'Warning period in days', value.WarningDays, 'number', 1, 3650);
-        fields.IntervalHours = input(form, 'Evaluation interval in hours', value.IntervalHours, 'number', 1, 744);
+        message(form, t('Run evaluations and automatic deletions or edit their schedules under Dashboard → Scheduled Tasks → WatchCircle.'));
         form.appendChild(el('h3', '', t('Libraries')));
         const libraries = data.Libraries.map(library => ({ Id: library.ItemId,
             Node: input(form, library.Name, value.LibraryIds.some(id => guid(id) === guid(library.ItemId)), 'checkbox') }));

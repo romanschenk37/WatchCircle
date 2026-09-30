@@ -36,6 +36,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<GroupManagementService>();
         serviceCollection.AddSingleton<MemberLibraryService>();
         serviceCollection.AddSingleton<IEventConsumer<UserCreatedEventArgs>, UserCreatedConsumer>();
+        serviceCollection.AddSingleton<IEventConsumer<UserDeletedEventArgs>, UserDeletedConsumer>();
         serviceCollection.AddSingleton<IGroupMembershipService, GroupMembershipService>();
         serviceCollection.AddSingleton<IUserProfileService, UserProfileService>();
         serviceCollection.AddSingleton<IItemWatchProgressService, ItemWatchProgressService>();

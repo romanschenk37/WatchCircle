@@ -29,15 +29,31 @@ public class GroupManagementService
     /// <returns>The current groups.</returns>
     public IReadOnlyList<WatchGroup> GetGroups()
     {
-        return PluginConfigurationLock.Run(() => GetPlugin().Configuration.Groups
-            .Select(group => new WatchGroup
+        return PluginConfigurationLock.Run(() =>
+        {
+            var plugin = GetPlugin();
+            var existingUserIds = _userManager.GetUsersIds().ToHashSet();
+            var changed = false;
+            foreach (var group in plugin.Configuration.Groups)
+            {
+                var seen = new HashSet<Guid>();
+                changed |= group.MemberUserIds?.RemoveAll(id => id == Guid.Empty || !existingUserIds.Contains(id) || !seen.Add(id)) > 0;
+            }
+
+            if (changed)
+            {
+                plugin.SaveConfiguration();
+            }
+
+            return plugin.Configuration.Groups.Select(group => new WatchGroup
             {
                 Id = group.Id,
                 Name = group.Name,
                 AutoAddNewUsers = group.AutoAddNewUsers,
                 MemberUserIds = group.MemberUserIds?.ToList() ?? new List<Guid>()
             })
-            .ToList());
+            .ToList();
+        });
     }
 
     /// <summary>
@@ -89,6 +105,7 @@ public class GroupManagementService
             var memberIds = group.MemberUserIds?.ToHashSet() ?? new HashSet<Guid>();
             memberIds.UnionWith((request.AddedUserIds ?? Array.Empty<Guid>()).Where(existingUserIds.Contains));
             memberIds.ExceptWith(request.RemovedUserIds ?? Array.Empty<Guid>());
+            memberIds.IntersectWith(existingUserIds);
             memberIds.Remove(Guid.Empty);
             group.MemberUserIds = memberIds.ToList();
             group.AutoAddNewUsers = request.AutoAddNewUsers;
@@ -130,6 +147,11 @@ public class GroupManagementService
 
         PluginConfigurationLock.Run(() =>
         {
+            if (!_userManager.GetUsersIds().Contains(userId))
+            {
+                return;
+            }
+
             var plugin = GetPlugin();
             var changed = false;
             foreach (var group in plugin.Configuration.Groups.Where(group => group.AutoAddNewUsers))
@@ -140,6 +162,31 @@ public class GroupManagementService
                     group.MemberUserIds.Add(userId);
                     changed = true;
                 }
+            }
+
+            if (changed)
+            {
+                plugin.SaveConfiguration();
+            }
+        });
+    }
+
+    /// <summary>Removes a deleted Jellyfin account from every group.</summary>
+    /// <param name="userId">The deleted account's identifier.</param>
+    public void RemoveDeletedUser(Guid userId)
+    {
+        if (userId == Guid.Empty)
+        {
+            return;
+        }
+
+        PluginConfigurationLock.Run(() =>
+        {
+            var plugin = GetPlugin();
+            var changed = false;
+            foreach (var group in plugin.Configuration.Groups)
+            {
+                changed |= group.MemberUserIds?.RemoveAll(id => id == userId) > 0;
             }
 
             if (changed)

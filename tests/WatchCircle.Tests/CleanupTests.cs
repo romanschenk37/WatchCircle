@@ -4,16 +4,268 @@ using System.Text.Json;
 using Jellyfin.Plugin.WatchCircle.Api;
 using Jellyfin.Plugin.WatchCircle.Cleanup;
 using MediaBrowser.Common.Api;
+using MediaBrowser.Controller.Configuration;
+using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Xunit;
 
 namespace WatchCircle.Tests;
 
 public sealed class CleanupTests
 {
+    [Fact]
+    public async Task JellyfinCanDiscoverAndConstructTheVisibleLocalizedEvaluationTask()
+    {
+        using var env = new Scenario();
+        env.Store.Change(state => { state.Settings.IntervalHours = 12; return true; });
+        var configuration = new ServerConfiguration { UICulture = "de-CH" };
+        var config = new Mock<IServerConfigurationManager>(); config.SetupGet(value => value.Configuration).Returns(configuration);
+        var services = new ServiceCollection(); services.AddSingleton(env.Service); services.AddSingleton(config.Object);
+        using var provider = services.BuildServiceProvider();
+        var tasks = typeof(CleanupService).Assembly.GetExportedTypes().Where(value => typeof(IScheduledTask).IsAssignableFrom(value))
+            .Select(type => (IScheduledTask)ActivatorUtilities.CreateInstance(provider, type)).ToArray();
+        Assert.Equal(2, tasks.Length); Assert.Equal(2, tasks.Select(value => value.Key).Distinct().Count());
+        var task = Assert.Single(tasks.OfType<CleanupEvaluationTask>());
+        var deletion = Assert.Single(tasks.OfType<CleanupDeletionTask>());
+        Assert.False(deletion.IsHidden); Assert.True(deletion.IsEnabled); Assert.True(deletion.IsLogged);
+        Assert.Equal("WatchCircle", deletion.Category); Assert.Equal("Bibliothek aufräumen: Fällige Inhalte löschen", deletion.Name);
+        Assert.Equal(TaskTriggerInfoType.IntervalTrigger, Assert.Single(deletion.GetDefaultTriggers()).Type);
+        Assert.Equal(TimeSpan.FromHours(1).Ticks, Assert.Single(deletion.GetDefaultTriggers()).IntervalTicks);
+        Assert.False(task.IsHidden); Assert.True(task.IsEnabled); Assert.True(task.IsLogged);
+        Assert.Equal("WatchCircle", task.Category); Assert.Equal("Bibliothek aufräumen: Inhalte prüfen", task.Name);
+        Assert.Contains(task.GetDefaultTriggers(), trigger => trigger.Type == TaskTriggerInfoType.StartupTrigger);
+        Assert.Equal(TimeSpan.FromHours(12).Ticks, Assert.Single(task.GetDefaultTriggers(), trigger => trigger.Type == TaskTriggerInfoType.IntervalTrigger).IntervalTicks);
+        configuration.UICulture = "fr"; Assert.Equal("Library cleanup: Evaluate titles", task.Name);
+        Assert.Equal("Library cleanup: Delete due titles", deletion.Name);
+        var progress = new ProgressLog(); await task.ExecuteAsync(progress, default);
+        Assert.Equal(new double[] { 0, 10, 90, 100 }, progress.Values);
+        Assert.NotNull(env.Store.Read().LastEvaluation);
+        Assert.Null(env.Entry.NominationId); Assert.Equal(0, env.Handler.Deletes);
+        env.Time.Now = env.Time.Now.AddMonths(3);
+        await task.ExecuteAsync(new ProgressLog(), default);
+        Assert.NotNull(env.Entry.NominationId);
+        Assert.Equal(0, env.Handler.Deletes);
+    }
+
+    [Fact]
+    public async Task ScheduledEvaluationDoesNotDeleteDueMediaEvenWhenAutomaticDeletionIsEnabled()
+    {
+        using var env = new Scenario(); await env.Due();
+        env.Store.Change(state => { state.Settings.AutomaticDeletion = true; return true; });
+        await EvaluationTask(env).ExecuteAsync(new ProgressLog(), default);
+        Assert.Equal(0, env.Handler.Deletes); Assert.All(env.Media.Paths, path => Assert.True(File.Exists(path)));
+    }
+
+    [Fact]
+    public async Task DisabledScheduledEvaluationDoesNoWorkAndStorageErrorsAreReported()
+    {
+        using var env = new Scenario();
+        env.Store.Change(state => { state.Settings.Enabled = false; return true; });
+        var progress = new ProgressLog(); await EvaluationTask(env).ExecuteAsync(progress, default);
+        Assert.Empty(env.Store.Read().Entries); Assert.Null(env.Store.Read().LastEvaluation); Assert.Equal(new double[] { 100 }, progress.Values);
+        File.WriteAllText(env.StatePath, "{"); env.Restart();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => EvaluationTask(env).ExecuteAsync(new ProgressLog(), default));
+        Assert.Equal("{", File.ReadAllText(env.StatePath));
+    }
+
+    [Fact]
+    public async Task ScheduledCancellationDoesNotFinishOrKeepTheEvaluationLock()
+    {
+        using var env = new Scenario(); using var cancel = new CancellationTokenSource();
+        var progress = new ProgressLog(value => { if (value == 10) cancel.Cancel(); });
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => EvaluationTask(env).ExecuteAsync(progress, cancel.Token));
+        Assert.DoesNotContain(100, progress.Values); Assert.Null(env.Store.Read().LastEvaluation); Assert.Null(env.Entry.NominationId);
+        await EvaluationTask(env).ExecuteAsync(new ProgressLog(), default);
+        Assert.NotNull(env.Store.Read().LastEvaluation);
+    }
+
+    [Fact]
+    public async Task EvaluationFailuresAreVisibleAndDoNotEnableAutomaticDeletion()
+    {
+        using var env = new Scenario(); await env.Due();
+        env.Library.InventoryFailure = new InvalidOperationException("Inventory failed");
+        var progress = new ProgressLog();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => EvaluationTask(env).ExecuteAsync(progress, default));
+        Assert.Equal("Inventory failed", env.Store.Read().Error); Assert.DoesNotContain(100, progress.Values);
+        env.Library.InventoryFailure = null;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => env.Service.ExecutePlanAsync(Guid.NewGuid(), Guid.Empty, default));
+        Assert.Equal(0, env.Handler.Deletes);
+        await EvaluationTask(env).ExecuteAsync(new ProgressLog(), default); Assert.Null(env.Store.Read().Error);
+    }
+
+    [Fact]
+    public async Task HostedServiceDoesNotRunIndependentEvaluationOrDeletionEvenWhenReady()
+    {
+        using var env = new Scenario(); await env.Due();
+        env.Store.Change(state => { state.Settings.AutomaticDeletion = true; return true; });
+        var previous = env.Store.Read().LastEvaluation; env.Time.Now = env.Time.Now.AddDays(2);
+        await env.Service.StartAsync(default);
+        await env.Service.StopAsync(default);
+        Assert.Equal(previous, env.Store.Read().LastEvaluation); Assert.Equal(0, env.Handler.Deletes);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task ManuallyStartingDeletionTaskDoesNothingUnlessBothSettingsAreEnabled(bool enabled, bool automatic)
+    {
+        using var env = new Scenario(); await env.Due();
+        env.Store.Change(state => { state.Settings.Enabled = enabled; state.Settings.AutomaticDeletion = automatic; return true; });
+        env.Library.InventoryFailure = new InvalidOperationException("Disabled tasks must not inspect the library");
+        var before = File.ReadAllText(env.StatePath); var progress = new ProgressLog();
+        await DeletionTask(env).ExecuteAsync(progress, default);
+        Assert.Equal(before, File.ReadAllText(env.StatePath)); Assert.Equal(new double[] { 100 }, progress.Values);
+        Assert.Equal(0, env.Handler.Requests); Assert.All(env.Media.Paths, path => Assert.True(File.Exists(path)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ScheduledDeletionRespectsDeadlinesAndDeletesEligibleTitlesOnlyOnce(bool series)
+    {
+        using var env = new Scenario(series); await env.Due();
+        env.Store.Change(state => state.Settings.AutomaticDeletion = true);
+        env.Time.Now = env.Time.Now.AddMinutes(-1);
+        await DeletionTask(env).ExecuteAsync(new ProgressLog(), default);
+        Assert.Equal(0, env.Handler.Deletes); Assert.Empty(env.Store.Read().Archives);
+        env.Time.Now = env.Time.Now.AddMinutes(1);
+        var evaluation = env.Store.Read().LastEvaluation; var progress = new ProgressLog();
+        await DeletionTask(env).ExecuteAsync(progress, default);
+        Assert.Equal(new double[] { 0, 90, 100 }, progress.Values); Assert.Equal(evaluation, env.Store.Read().LastEvaluation);
+        Assert.Equal(1, env.Handler.Deletes); Assert.Equal("Deleted", Assert.Single(env.Store.Read().Deletions).Phase);
+        Assert.NotEmpty(env.Store.Read().Archives); Assert.All(env.Media.Paths, path => Assert.False(File.Exists(path)));
+        await DeletionTask(env).ExecuteAsync(new ProgressLog(), default); Assert.Equal(1, env.Handler.Deletes);
+    }
+
+    [Fact]
+    public async Task ScheduledDeletionRequiresSuccessfulEvaluationAfterRestartAndSettingsChanges()
+    {
+        using var env = new Scenario(); await env.Due(); env.Store.Change(state => state.Settings.AutomaticDeletion = true);
+        env.Restart();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DeletionTask(env).ExecuteAsync(new ProgressLog(), default));
+        Assert.Equal(0, env.Handler.Requests);
+        await EvaluationTask(env).ExecuteAsync(new ProgressLog(), default);
+        env.Service.SaveSettings(env.Store.Read().Settings);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DeletionTask(env).ExecuteAsync(new ProgressLog(), default));
+        Assert.Equal(0, env.Handler.Deletes);
+        await EvaluationTask(env).ExecuteAsync(new ProgressLog(), default);
+        await DeletionTask(env).ExecuteAsync(new ProgressLog(), default); Assert.Equal(1, env.Handler.Deletes);
+    }
+
+    [Fact]
+    public async Task SettingsChangedDuringEvaluationRequireAnotherEvaluationBeforeAutomaticDeletion()
+    {
+        using var env = new Scenario(); await env.Due(); env.Store.Change(state => state.Settings.AutomaticDeletion = true);
+        var progress = new ProgressLog(value => { if (value == 90) env.Service.SaveSettings(env.Store.Read().Settings); });
+        await Assert.ThrowsAsync<InvalidOperationException>(() => EvaluationTask(env).ExecuteAsync(progress, default));
+        Assert.DoesNotContain(100, progress.Values);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DeletionTask(env).ExecuteAsync(new ProgressLog(), default));
+        Assert.Equal(0, env.Handler.Deletes);
+        await EvaluationTask(env).ExecuteAsync(new ProgressLog(), default);
+        await DeletionTask(env).ExecuteAsync(new ProgressLog(), default); Assert.Equal(1, env.Handler.Deletes);
+    }
+
+    [Fact]
+    public async Task ScheduledDeletionReportsStorageAndExternalFailuresInsteadOfSuccess()
+    {
+        using var env = new Scenario(); await env.Due(); env.Store.Change(state => state.Settings.AutomaticDeletion = true);
+        env.Handler.LeaveFiles = true; var progress = new ProgressLog();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DeletionTask(env).ExecuteAsync(progress, default));
+        Assert.DoesNotContain(100, progress.Values); Assert.Equal("Failed", Assert.Single(env.Store.Read().Deletions).Phase);
+        Assert.True(File.Exists(env.Media.Paths[0]));
+        File.WriteAllText(env.StatePath, "{"); env.Restart();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DeletionTask(env).ExecuteAsync(new ProgressLog(), default));
+        Assert.Equal("{", File.ReadAllText(env.StatePath)); Assert.Equal(1, env.Handler.Deletes);
+    }
+
+    [Fact]
+    public async Task ScheduledDeletionCanBeCancelledBeforeDispatchAndRunAgain()
+    {
+        using var env = new Scenario(); await env.Due(); env.Store.Change(state => state.Settings.AutomaticDeletion = true);
+        using var cancel = new CancellationTokenSource(); env.Handler.BeforeSecondFileLookup = cancel.Cancel;
+        var progress = new ProgressLog();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => DeletionTask(env).ExecuteAsync(progress, cancel.Token));
+        Assert.DoesNotContain(100, progress.Values); Assert.Equal(0, env.Handler.Deletes);
+        Assert.Empty(env.Store.Read().Deletions); Assert.Null(env.Entry.Error);
+        await DeletionTask(env).ExecuteAsync(new ProgressLog(), default); Assert.Equal(1, env.Handler.Deletes);
+    }
+
+    [Theory]
+    [InlineData("disable-auto")]
+    [InlineData("disable-cleanup")]
+    [InlineData("settings")]
+    [InlineData("playback")]
+    [InlineData("keep")]
+    [InlineData("protect")]
+    public async Task ScheduledDeletionRechecksConsentAndProtectionImmediatelyBeforeDispatch(string change)
+    {
+        using var env = new Scenario(); await env.Due(); env.Store.Change(state => state.Settings.AutomaticDeletion = true);
+        env.Handler.BeforeSecondFileLookup = () =>
+        {
+            if (change is "disable-auto" or "disable-cleanup" or "settings")
+            {
+                var settings = env.Store.Read().Settings;
+                if (change == "disable-auto") settings.AutomaticDeletion = false;
+                if (change == "disable-cleanup") settings.Enabled = false;
+                env.Service.SaveSettings(settings);
+            }
+            if (change == "playback") env.Library.Playing = true;
+            if (change == "protect") env.Service.Protect(env.Entry.Id, true);
+            if (change == "keep") env.Service.Reply(env.Entry.Id, env.User, new() { NominationId = env.Entry.NominationId!.Value, Answer = "Keep" });
+        };
+        var progress = new ProgressLog();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DeletionTask(env).ExecuteAsync(progress, default));
+        Assert.Equal(0, env.Handler.Deletes); Assert.DoesNotContain(100, progress.Values);
+        Assert.All(env.Media.Paths, path => Assert.True(File.Exists(path)));
+    }
+
+    [Fact]
+    public async Task FeedbackRemainsOpenAfterDeadlineUntilDispatchAndIndifferentCanBeChanged()
+    {
+        using var env = new Scenario(); await env.Due(); env.Time.Now = env.Time.Now.AddDays(7);
+        Assert.True(CleanupRules.NeedsReply(env.Store.Read(), env.Entry, env.User));
+        var pending = JsonSerializer.SerializeToElement(env.Service.Pending(env.User)); Assert.Equal(1, pending.GetArrayLength());
+        env.Service.Reply(env.Entry.Id, env.User, new() { NominationId = env.Entry.NominationId!.Value, Answer = "Indifferent" });
+        Assert.False(CleanupRules.NeedsReply(env.Store.Read(), env.Entry, env.User));
+        var statuses = JsonSerializer.SerializeToElement(env.Service.ItemStatuses(env.User, new[] { env.Media.ItemId })); Assert.Equal(1, statuses.GetArrayLength());
+        env.Service.Reply(env.Entry.Id, env.User, new() { NominationId = env.Entry.NominationId!.Value, Answer = "Keep" });
+        Assert.Null(env.Entry.NominationId); Assert.Equal(env.Time.Now, env.Entry.LastInteraction); Assert.Equal(0, env.Handler.Deletes);
+    }
+
+    [Fact]
+    public void SavingCleanupSettingsPreservesTheLegacyTriggerSeed()
+    {
+        using var env = new Scenario(); env.Store.Change(state => { state.Settings.IntervalHours = 48; return true; });
+        var settings = env.Store.Read().Settings; settings.IntervalHours = 24;
+        env.Service.SaveSettings(settings);
+        Assert.Equal(48, env.Service.DefaultEvaluationIntervalHours);
+    }
+
+    private static CleanupEvaluationTask EvaluationTask(Scenario env)
+    {
+        var config = new Mock<IServerConfigurationManager>(); config.SetupGet(value => value.Configuration).Returns(new ServerConfiguration());
+        return new(env.Service, config.Object);
+    }
+
+    private static CleanupDeletionTask DeletionTask(Scenario env)
+    {
+        var config = new Mock<IServerConfigurationManager>(); config.SetupGet(value => value.Configuration).Returns(new ServerConfiguration());
+        return new(env.Service, config.Object);
+    }
+
+    private sealed class ProgressLog(Action<double>? report = null) : IProgress<double>
+    {
+        public List<double> Values { get; } = new();
+        public void Report(double value) { Values.Add(value); report?.Invoke(value); }
+    }
+
     [Fact]
     public async Task UnknownHistoryGetsFullGraceAndRepeatedScansKeepTheDeadline()
     {
@@ -413,7 +665,8 @@ public sealed class CleanupTests
         public HashSet<Guid> Denied = new();
         public List<(Guid User, Guid Item)> Restores = new();
         public bool Playing;
-        public IReadOnlyList<CleanupMedia> Inventory() => CleanupStore.Clone(Media);
+        public Exception? InventoryFailure;
+        public IReadOnlyList<CleanupMedia> Inventory() => InventoryFailure is null ? CleanupStore.Clone(Media) : throw InventoryFailure;
         public IReadOnlyList<CleanupUserState> ReadStates(CleanupMedia media) => States;
         public IReadOnlyList<CleanupUser> Users() => Accounts;
         public bool CanAccess(Guid itemId, Guid userId) => !Denied.Contains(itemId);
@@ -431,13 +684,14 @@ public sealed class CleanupTests
         private readonly Scenario _env;
         private int _files;
         private bool _removed;
-        public int Deletes;
+        public int Deletes, Requests;
         public string? DeleteUrl;
         public bool Fail, ExtraFile, LeaveFiles;
         public Action? BeforeSecondFileLookup;
         public Handler(Scenario env) => _env = env;
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            Requests++;
             Assert.Equal("isolated.test", request.RequestUri!.Host);
             Assert.Equal("test-secret", request.Headers.GetValues("X-Api-Key").Single());
             if (Fail) return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));

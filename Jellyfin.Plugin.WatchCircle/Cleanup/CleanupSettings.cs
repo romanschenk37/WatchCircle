@@ -18,7 +18,7 @@ public sealed class CleanupSettings
     /// <summary>Gets or sets days between nomination and deletion.</summary>
     public int WarningDays { get; set; } = 30;
 
-    /// <summary>Gets or sets evaluation interval in hours.</summary>
+    /// <summary>Gets or sets the legacy interval used to seed Jellyfin's default scheduled task trigger.</summary>
     public int IntervalHours { get; set; } = 24;
 
     /// <summary>Gets or sets selected Jellyfin library identifiers.</summary>
