@@ -70,7 +70,7 @@ For each buddy, WatchCircle reads Jellyfin **user data** for the item (or for an
 
 Watch history is retroactive—it counts even if someone watched **before** they were added to a group.
 
-Your own account is excluded from the poster overlays and the progress rows. Each other person appears once, even if you share several groups. People without a shared group or without any viewing progress on the title are excluded from the progress rows. If nobody qualifies and there is no Seerr request attribution, the card is hidden.
+Your own account is excluded from poster overlays. Detail cards always include **You**, even before you or anyone else starts watching and even without group membership. Each other person appears once, even if you share several groups. People without a shared group or without any viewing progress on the title are excluded from the buddy progress rows.
 
 ### People and profiles
 
@@ -131,7 +131,7 @@ Poster overlays require the **web UI**. Mobile and TV apps do not load the injec
 
 ### Detail page cards (movies, episodes, seasons & series)
 
-On **movie**, **episode**, **season**, and **series** detail pages, WatchCircle injects a **WatchCircle** section with one shared card for all group mates who have started the title (or any episode in the season or show).
+On **movie**, **episode**, **season**, and **series** detail pages, WatchCircle shows one shared card without a separate heading. It always shows your own progress first, followed by all group mates who have started the title (or any episode in the season or show). Your **You** row uses a grey bar and the same progress calculation as the buddy rows, including zero progress on untouched titles.
 
 Each person gets one row, ordered by username, with:
 
@@ -155,7 +155,7 @@ The shared card appears on the **series** detail page. Each row counts completed
 
 ### Seerr request attribution
 
-When enabled, **Requested by** appears above the progress rows and shows everyone who requested the title in Seerr. Requesters do not need to share a WatchCircle group with you or have started watching. The requester list can appear on its own when nobody in your groups has started the title.
+When enabled, **Requested by** appears above the progress rows and shows everyone who requested the title in Seerr. Requesters do not need to share a WatchCircle group with you or have started watching. Request attribution and your own progress remain visible when nobody in your groups has started the title.
 
 - Movies and series are matched by their **TMDB ID** in Jellyfin's metadata, not by title text.
 - Each Seerr user appears once, even across several requests. Series list the requested seasons; season and episode pages include only requests for their season.
@@ -210,7 +210,7 @@ After validation, the web UI refreshes **poster overlays**, **WatchCircle** deta
 - Avatar stacks on **movie**, **episode**, **season**, and **show** posters in the web client
 - One **WatchCircle** progress card on **movie**, **season**, and **series** pages
 - One row per eligible person with time watched, percentage, and Jellyfin **Finished** state
-- Season and series rows show the **highest started episode** and that episode’s progress
+- Season and series rows show the **highest started episode** and the overall season or series progress
 - Progress based on each user’s Jellyfin watch state (retroactive)
 - **Watch together** — host records shared viewing; buddies validate and sync progress on next login
 - Validation UI with host profile, grouped series/seasons, and selective media approval

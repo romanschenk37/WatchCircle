@@ -9,6 +9,11 @@ namespace Jellyfin.Plugin.WatchCircle.Api;
 public class ItemOverlayDto
 {
     /// <summary>
+    /// Gets or sets a value indicating whether the item is accessible and supports watch progress.
+    /// </summary>
+    public bool IsSupported { get; set; }
+
+    /// <summary>
     /// Gets or sets the item runtime in Jellyfin ticks.
     /// </summary>
     public long RunTimeTicks { get; set; }

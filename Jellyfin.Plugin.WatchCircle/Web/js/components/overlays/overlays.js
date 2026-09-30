@@ -193,6 +193,7 @@
     function parseItemOverlay(raw) {
         if (!raw) {
             return {
+                isSupported: false,
                 watchers: [],
                 runTimeTicks: 0,
                 isSeason: false,
@@ -203,6 +204,7 @@
 
         if (Array.isArray(raw)) {
             return {
+                isSupported: false,
                 watchers: raw.map(parseWatcher),
                 runTimeTicks: 0,
                 isSeason: false,
@@ -212,6 +214,7 @@
         }
 
         return {
+            isSupported: !!(raw.isSupported || raw.IsSupported),
             watchers: (raw.watchers || raw.Watchers || []).map(parseWatcher),
             runTimeTicks: Number(raw.runTimeTicks || raw.RunTimeTicks || 0),
             isSeason: !!(raw.isSeason || raw.IsSeason),
@@ -378,6 +381,23 @@
             card.appendChild(attribution);
         }
 
+        let watchProgress = getWatchProgress();
+        let isEpisodeScoped = overlay.isSeason || overlay.isSeries;
+        if (watchProgress) {
+            let self = document.createElement('div');
+            self.className = 'wc-shared-progress-self wc-shared-progress-member';
+            self.appendChild(watchProgress.createRow({
+                labelText: t('You'),
+                progress: overlay.currentUser,
+                runTimeTicks: isEpisodeScoped
+                    ? watchProgress.getProgressRuntime(overlay.currentUser, 0)
+                    : overlay.runTimeTicks,
+                variant: 'you',
+                showEpisodeLine: isEpisodeScoped
+            }));
+            card.appendChild(self);
+        }
+
         if (!overlay.watchers.length) {
             return card;
         }
@@ -390,8 +410,6 @@
         let list = document.createElement('ul');
         list.className = 'wc-shared-progress-members';
         list.setAttribute('aria-label', t("Group members' watch progress"));
-        let watchProgress = getWatchProgress();
-        let isEpisodeScoped = overlay.isSeason || overlay.isSeries;
 
         overlay.watchers.forEach(function (watcher) {
             let row = document.createElement('li');
@@ -451,12 +469,14 @@
         overlay = parseItemOverlay(overlay);
         let requesters = requesterCache.get(normalizeGuid(itemId)) || [];
 
-        if (!overlay.watchers.length && !requesters.length) {
+        if (!overlay.isSupported) {
             return false;
         }
 
         let section = document.createElement('div');
         section.className = DETAIL_BUDDIES_CLASS + ' verticalSection detailVerticalSection';
+        section.setAttribute('role', 'group');
+        section.setAttribute('aria-label', t('Progress'));
 
         if (overlay.isSeason) {
             section.classList.add('wc-detail-buddies-season');
@@ -465,11 +485,6 @@
         if (overlay.isSeries) {
             section.classList.add('wc-detail-buddies-series');
         }
-
-        let title = document.createElement('h2');
-        title.className = 'sectionTitle';
-        title.textContent = 'WatchCircle';
-        section.appendChild(title);
 
         section.appendChild(renderSharedProgressCard(overlay, requesters));
 

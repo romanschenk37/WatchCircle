@@ -1,7 +1,7 @@
 ---
 name: "WatchCircle"
 guid: "33f774e1-5cb2-4aca-a349-f6ec2bd82c7f"
-version: "1.1.0.0"
+version: "1.1.1.0"
 targetAbi: "12.0.0.0"
 framework: "net9.0"
 overview: "Your groups' watch progress at a glance"
@@ -13,6 +13,5 @@ owner: "romanschenk37"
 artifacts:
   - "Jellyfin.Plugin.WatchCircle.dll"
 changelog: |-
-  - Add optional library cleanup with inactivity periods, user feedback, permanent protection and administrator review.
-  - Mark nominated posters and show detail banners where users can change previous feedback.
-  - Remove mapped titles through Radarr/Sonarr with durable watched-state backups and verified deletion outcomes.
+  - Always show the detail card with your own Jellyfin progress, even before anyone starts watching.
+  - Show Seerr requesters independently of group viewing progress and remove the WatchCircle heading.

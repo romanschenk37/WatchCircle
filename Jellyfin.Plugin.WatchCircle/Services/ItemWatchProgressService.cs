@@ -112,6 +112,7 @@ public class ItemWatchProgressService : IItemWatchProgressService
 
             result[itemId] = new ItemOverlayDto
             {
+                IsSupported = true,
                 IsSeason = context.IsSeason,
                 IsSeries = context.IsSeries,
                 RunTimeTicks = context.RunTimeTicks,
