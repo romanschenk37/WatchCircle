@@ -1,7 +1,7 @@
 ---
 name: "WatchCircle"
 guid: "33f774e1-5cb2-4aca-a349-f6ec2bd82c7f"
-version: "1.0.6.0"
+version: "1.0.7.0"
 targetAbi: "12.0.0.0"
 framework: "net9.0"
 overview: "Your groups' watch progress at a glance"
@@ -13,6 +13,6 @@ owner: "romanschenk37"
 artifacts:
   - "Jellyfin.Plugin.WatchCircle.dll"
 changelog: |-
-  - Add a WatchCircle people directory and group-restricted profiles in the web client.
-  - Compare started and completed movies and series with your progress, plus unwatched favorites.
-  - Open profiles from shared-card names and linked Seerr requesters in common groups.
+  - Replace profile filters with six poster collections for started, completed and favorite movies and series.
+  - Remove the profile search field and add directional, OK and Back navigation.
+  - Add full collection views and restore focus and scroll position when returning.

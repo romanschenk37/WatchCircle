@@ -1,59 +1,83 @@
 .wc-profiles-dialog {
-    box-sizing: border-box; width: min(1100px, calc(100vw - 40px)); height: min(850px, 90dvh);
-    max-width: none; max-height: 92dvh; padding: 0; border: 1px solid #444;
-    border-radius: 16px; background: #181a20; color: #f3f4f8; box-shadow: 0 24px 80px #0009;
-    font: inherit; overflow: hidden; color-scheme: dark;
+    --wc-profile-card-width: 11.5em;
+    box-sizing: border-box; position: fixed; z-index: 10000; top: 0; right: 0; bottom: 0; left: 0;
+    display: flex; flex-direction: column; width: 100%; height: 100vh; height: 100dvh;
+    background: #101113; color: #eee; font: inherit; overflow: hidden; color-scheme: dark;
 }
-.wc-profiles-dialog[open] { display: flex; flex-direction: column; }
-.wc-profiles-dialog::backdrop { background: #000a; }
-.wc-profiles-header { display: flex; align-items: center; gap: 18px; padding: 18px 24px; border-bottom: 1px solid #ffffff1f; flex-shrink: 0; }
-.wc-profiles-header h2 { margin: 0; font-size: 1.35em; overflow-wrap: anywhere; }
-.wc-profiles-body { padding: 24px; overflow: auto; overscroll-behavior: contain; }
-.wc-profiles-dialog button, .wc-profiles-dialog input, .wc-profiles-dialog select { font: inherit; }
+.wc-profiles-dialog *, .wc-profiles-dialog *::before, .wc-profiles-dialog *::after { box-sizing: border-box; }
+.wc-profiles-header { display: flex; align-items: center; gap: 1.25em; padding: 1em 2.5em; flex-shrink: 0; background: #17191d; border-bottom: 1px solid #ffffff16; }
+.wc-profiles-header h2 { margin: 0; font-size: 1.4em; overflow-wrap: anywhere; line-height: 1.35; }
+.wc-profiles-body { min-height: 0; flex: 1; padding: 1.5em 2.5em 3em; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+.wc-profiles-dialog button, .wc-profiles-dialog input { font: inherit; }
 .wc-profiles-dialog button { cursor: pointer; }
 .wc-profiles-dialog [hidden] { display: none !important; }
-.wc-profile-action, .wc-profile-tab, .wc-profile-type, .wc-profile-search { color: inherit; background: #242731; border: 1px solid #ffffff26; border-radius: 8px; padding: 11px 14px; }
-.wc-profile-action:hover, .wc-profile-tab:hover { background: #353946; }
-.wc-profile-close { margin-left: auto; color: inherit; background: transparent; border: 0; font-size: 2em !important; width: 40px; height: 40px; line-height: 1; flex-shrink: 0; }
-.wc-profile-subtitle { color: #bfc3d2; font-size: .88em; line-height: 1.5; margin-top: 0; }
-.wc-profile-message { padding: 18px 0; color: #cbd0de; line-height: 1.6; }
-.wc-profile-search { box-sizing: border-box; width: 100%; min-width: 0; }
+.wc-profile-action, .wc-profile-search, .wc-profile-all { color: inherit; background: #272a30; border: 1px solid #ffffff24; border-radius: 5px; padding: .75em 1em; min-height: 46px; }
+.wc-profile-action:hover, .wc-profile-all:hover { background: #373c45; }
+.wc-profile-close { margin-left: auto; flex-shrink: 0; }
+.wc-profile-back { flex-shrink: 0; }
+.wc-profile-subtitle { color: #b7bbc4; font-size: .9em; line-height: 1.5; margin: 0; }
+.wc-profile-message { padding: 1em 0; color: #cbd0de; line-height: 1.6; }
+.wc-profile-search { display: block; width: 100%; max-width: 28em; margin-top: 1.25em; }
 .wc-profile-search::placeholder { color: #a6adbf; }
-.wc-profile-people { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
-.wc-profile-person { display: flex; align-items: center; gap: 14px; text-align: left; color: inherit; background: #242731; border: 1px solid #ffffff1c; border-radius: 12px; padding: 20px 16px; min-width: 0; }
-.wc-profile-person:hover { border-color: #aa8af5; background: #2c293b; }
-.wc-profile-person-copy { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
-.wc-profile-person-copy > span { font-size: .78em; color: #bfc3d2; }
-.wc-profile-avatar { display: inline-flex; width: 48px; height: 48px; flex: 0 0 48px; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; background: #5b4386; color: #fff; font-size: 1.3em; }
-.wc-profile-intro { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-.wc-profile-intro p { margin: 6px 0 0; }
-.wc-profile-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
-.wc-profile-tab[aria-pressed="true"] { color: #fff; background: #65489b; border-color: #bb96ff; }
-.wc-profile-filters { display: flex; gap: 12px; margin-bottom: 14px; }
-.wc-profile-type { min-width: 160px; }
-.wc-profile-titles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
-.wc-profile-title-card { background: #22252d; border: 1px solid #ffffff17; border-radius: 12px; padding: 18px; min-width: 0; }
-.wc-profile-title-link { display: flex; gap: 14px; align-items: center; color: inherit; text-decoration: none; margin-bottom: 20px; }
-.wc-profile-title-link:hover h3 { text-decoration: underline; }
-.wc-profile-title-link h3 { margin: 0 0 8px; font-size: 1.08em; overflow-wrap: anywhere; }
-.wc-profile-poster { position: relative; display: flex; width: 52px; height: 76px; flex: 0 0 52px; align-items: center; justify-content: center; background: #39364b; border-radius: 5px; overflow: hidden; color: #cfc4e8; }
-.wc-profile-poster img { position: absolute; width: 100%; height: 100%; object-fit: cover; }
-.wc-profile-progress + .wc-profile-progress { margin-top: 14px; }
-.wc-profile-progress-meta { display: flex; justify-content: space-between; gap: 10px; font-size: .8em; margin-bottom: 7px; }
-.wc-profile-progress-meta > span:first-child { color: #c8a9ff; overflow-wrap: anywhere; min-width: 0; }
-.wc-profile-progress-meta > span:last-child { text-align: right; color: #d4d8e3; }
-.wc-profile-progress-you .wc-profile-progress-meta > span:first-child { color: #79d5f0; }
-.wc-profile-track { height: 6px; background: #ffffff16; border-radius: 6px; overflow: hidden; }
-.wc-profile-fill { height: 100%; background: #b28aed; border-radius: inherit; }
-.wc-profile-progress-you .wc-profile-fill { background: #55c0df; }
-.wc-profiles-dialog :focus-visible { outline: 2px solid #bda0f5; outline-offset: 3px; }
-@media (max-width: 800px) { .wc-profile-people { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 600px) {
-    .wc-profiles-dialog { width: calc(100vw - 16px); height: 94dvh; max-height: 94dvh; }
-    .wc-profiles-header, .wc-profiles-body { padding: 16px; }
-    .wc-profiles-header { gap: 10px; }
-    .wc-profile-people, .wc-profile-titles { grid-template-columns: minmax(0, 1fr); }
-    .wc-profile-filters { flex-direction: column; }
-    .wc-profile-tab { padding: 10px; font-size: .85em !important; }
-    .wc-profile-back { padding: 8px; font-size: .85em !important; }
+.wc-profile-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(10em, 1fr)); gap: 1.5em; margin-top: 2em; }
+.wc-profile-person { display: flex; flex-direction: column; align-items: center; gap: 1em; min-width: 0; min-height: 13em; padding: 1.5em 1em; color: inherit; background: #202227; border: 2px solid transparent; border-radius: 8px; }
+.wc-profile-person strong { overflow-wrap: anywhere; }
+.wc-profile-person .wc-profile-avatar { width: 5em; height: 5em; font-size: 1.25em; }
+.wc-profile-person:hover { background: #2b3039; }
+.wc-profile-avatar { display: inline-flex; width: 3em; height: 3em; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 50%; object-fit: cover; background: #5b4386; color: #fff; font-size: 1.2em; }
+.wc-profile-intro { display: flex; align-items: center; gap: 1em; margin-bottom: 1.8em; }
+.wc-profile-legend { font-size: 1.05em; font-weight: 600; margin: 0 0 .3em; }
+.wc-profile-shelf { margin-bottom: 2em; }
+.wc-profile-shelf-heading { display: flex; align-items: center; gap: .75em; margin-bottom: .4em; }
+.wc-profile-shelf-heading h3 { font-size: 1.35em; font-weight: 600; margin: 0; }
+.wc-profile-count { color: #b5b9c3; font-size: .9em; }
+.wc-profile-all { margin-left: auto; padding: .45em .7em; font-size: .85em !important; background: transparent; border-color: transparent; }
+.wc-profile-rail { display: flex; overflow-x: auto; overflow-y: hidden; margin: 0 -.6em; padding: .6em; list-style: none; scrollbar-width: thin; scrollbar-color: #686d78 #17191d; }
+.wc-profile-rail::-webkit-scrollbar { height: 7px; }
+.wc-profile-rail::-webkit-scrollbar-thumb { background: #686d78; border-radius: 4px; }
+.wc-profile-title-card { list-style: none; min-width: 0; margin: 0; padding: 0; }
+.wc-profile-rail > .wc-profile-title-card { flex: 0 0 11.5em; flex-basis: var(--wc-profile-card-width); width: 11.5em; width: var(--wc-profile-card-width); margin-right: 1.25em; }
+.wc-profile-rail > .wc-profile-title-card:last-child { margin-right: 0; }
+.wc-profile-title-link { display: block; height: 100%; color: inherit; text-decoration: none; border-radius: 5px; background: #17191e; }
+.wc-profile-title-link:hover { background: #252a34; }
+.wc-profile-poster { position: relative; width: 100%; height: 0; padding-top: 150%; border-radius: 5px 5px 0 0; overflow: hidden; background: linear-gradient(145deg, #263c53, #35304b); }
+.wc-profile-poster-fallback { position: absolute; top: 42%; left: 0; width: 100%; text-align: center; font-size: 2em; color: #e1d8fa; }
+.wc-profile-poster img { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.wc-profile-title-copy { padding: .7em; }
+.wc-profile-title-copy h3 { font-size: 1em; font-weight: 600; margin: 0 0 .35em; line-height: 1.35; min-height: 2.7em; overflow-wrap: anywhere; }
+.wc-profile-year { display: block; color: #b7bbc4; font-size: .8em; margin-bottom: 1em; }
+.wc-profile-progress + .wc-profile-progress { margin-top: .8em; }
+.wc-profile-progress-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2em .5em; line-height: 1.35; font-size: .75em; margin-bottom: .35em; }
+.wc-profile-progress-name { color: #cfb0ff; overflow-wrap: anywhere; }
+.wc-profile-progress-status { color: #d4d8e3; }
+.wc-profile-progress-you .wc-profile-progress-name { color: #7bdaf4; }
+.wc-profile-track { height: 5px; background: #ffffff20; border-radius: 5px; overflow: hidden; }
+.wc-profile-fill { height: 100%; background: #b58eec; border-radius: inherit; }
+.wc-profile-progress-you .wc-profile-fill { background: #55c6e6; }
+.wc-profile-empty { color: #a5aab5; font-size: .9em; margin: .5em 0 1em; }
+.wc-profile-collection-grid { display: flex; flex-wrap: wrap; list-style: none; margin: 1.5em 0; padding: .4em; }
+.wc-profile-collection-grid > .wc-profile-title-card { width: 11.5em; margin: .75em; }
+@supports (display: grid) {
+    .wc-profile-collection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--wc-profile-card-width), 1fr)); gap: 1.5em; }
+    .wc-profile-collection-grid > .wc-profile-title-card { width: auto; margin: 0; }
+}
+.wc-profile-more-card { display: block; width: 100%; height: 100%; min-height: 25em; padding: 1em; border-radius: 5px; border: 1px solid #636976; color: #eee; background: #252a34; font-size: 1.1em !important; }
+.wc-profiles-dialog a:focus, .wc-profiles-dialog button:focus, .wc-profiles-dialog input:focus {
+    outline: 4px solid #73d6f2; outline-offset: 3px; box-shadow: 0 0 0 7px #101113;
+}
+.wc-profiles-dialog a:focus, .wc-profiles-dialog button:focus { background-color: #293849; }
+.layout-tv .wc-profiles-dialog { --wc-profile-card-width: 12em; }
+.layout-tv .wc-profile-progress-meta { font-size: .85em; }
+@media (min-width: 1800px) { .wc-profiles-dialog { --wc-profile-card-width: 13em; } }
+@media (max-width: 650px) {
+    .wc-profiles-dialog { --wc-profile-card-width: 10em; }
+    .wc-profiles-header { padding: .8em 1em; gap: .8em; }
+    .wc-profiles-header h2 { font-size: 1.05em; }
+    .wc-profiles-body { padding: 1.25em 1em 2em; }
+    .wc-profile-back, .wc-profile-close { padding: .6em; font-size: .8em !important; }
+    .wc-profile-shelf-heading h3 { font-size: 1.05em; }
+    .wc-profile-all { font-size: .75em !important; }
+    .wc-profile-collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1em; }
+    .wc-profile-people { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1em; }
+    .wc-profile-intro .wc-profile-subtitle { font-size: .8em; }
 }

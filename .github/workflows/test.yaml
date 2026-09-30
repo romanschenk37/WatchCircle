@@ -25,3 +25,8 @@ jobs:
           dotnet-version: '9.0.x'
       - name: Test plugin
         run: dotnet test tests/WatchCircle.Tests/WatchCircle.Tests.csproj --configuration Release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test profile navigation
+        run: node --test tests/web/*.test.cjs

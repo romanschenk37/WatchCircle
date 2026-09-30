@@ -72,13 +72,28 @@ Profiles have three exclusive categories, based on the selected person's data:
 - **Abgeschlossen (Completed)**: movies marked played, and series whose available episodes are all marked played.
 - **Favoriten (Favorites)**: favorited movies or series that the person has not started. A favorite already started or completed stays in that category.
 
-Every title includes the person's progress and **Du (You)** for comparison, even if you have not started it. Search and a movie/series filter help with larger lists; **Weitere Titel anzeigen** expands the initial 24 results. Clicking a title opens its Jellyfin detail page.
+Every title includes the person's progress and **Du (You)** for comparison, even if you have not started it. The full-screen profile shows **six horizontal poster collections**: started movies, started series, completed movies, completed series, favorite movies and favorite series. Profiles have no search field, category tabs or media filter. The people directory retains its optional person search.
+
+Use **Left/Right** to move within a poster row and **Up/Down** to change rows, **OK/Enter** to open a title or collection, and **Back/Escape** to return. Focus has a strong visible border and the view scrolls it into sight. Each row previews up to 24 titles; **Alle anzeigen (Show all)** opens a grid with all remaining titles available in batches of 48. Returning restores the selected row, focus and scroll position. The people directory focuses a person first, so a remote does not automatically open a text keyboard.
 
 For profiles, series progress covers **all available episodes visible to the viewer, including specials**, with each episode contributing equally. Partial episodes contribute their saved playback fraction. Missing/virtual episodes are excluded, and both users use the same denominator. Completing the last available episode means **up to date**, not that no future seasons will be released. New available episodes can move a series back into Started. Unknown movie runtimes show an unknown percentage rather than inventing one. The detail-page card continues to show the furthest started episode.
 
 The server checks common group membership on every profile request and filters library access as the signed-in viewer. Guessing another user's profile URL does not bypass the group check. Profiles read existing Jellyfin progress and favorites without saving additional history or a persistent profile cache.
 
 Seerr requester names open profiles only when their exact linked Jellyfin user ID belongs to a shared group. Other requesters remain visible as plain text; matching display names alone does not create a link.
+
+#### TV client availability
+
+WatchCircle adds its UI to the **server-hosted Jellyfin web client**. Remote-friendly controls do not make that code available in every TV app:
+
+- **LG webOS:** the [official app](https://github.com/jellyfin/jellyfin-webos) loads the server's web interface, making it a candidate for this integration. Actual TV hardware/engine compatibility is still unverified.
+- **Samsung Tizen:** the [official app](https://github.com/jellyfin/jellyfin-tizen) packages its own Jellyfin Web build. Server-side injection alone does not add WatchCircle to that bundled interface; client integration would be needed.
+- **Android TV:** the [official native client](https://github.com/jellyfin/jellyfin-androidtv) does not load this web UI. A native integration would be separate work.
+- **Browser using the server's web interface:** uses this implementation, including the keyboard/remote navigation.
+
+The new profile view does not require the native HTML dialog API, and handles desktop arrows/Enter/Escape, Samsung Back (`10009`), LG Back (`461`) and forwarded Jellyfin navigation commands. These were tested with simulated browser input, not physical TV remotes. The existing plugin's other web components and the underlying Jellyfin version also need to support the TV engine.
+
+Local development fixtures use synthetic titles and optional scenario controls. Those controls and test data are ignored by Git and are not embedded in release packages.
 
 ### Poster overlays
 

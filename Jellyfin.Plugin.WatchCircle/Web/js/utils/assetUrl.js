@@ -18,17 +18,26 @@
     let profilesLoading;
     function showProfiles(memberId) {
         if (!profilesLoading) {
-            profilesLoading = new Promise(function (resolve, reject) {
-                if (window.WatchCircleProfiles) { resolve(); return; }
-                let script = document.createElement('script');
-                script.src = getAssetUrl('components/profiles/profiles.js');
-                script.addEventListener('load', resolve, { once: true });
-                script.addEventListener('error', function () { script.remove(); profilesLoading = null; reject(new Error('Profile module unavailable')); }, { once: true });
-                document.head.appendChild(script);
-            });
+            profilesLoading = Promise.all([
+                loadProfileModule('profileNavigation', 'WatchCircleProfileNavigation'),
+                loadProfileModule('profiles', 'WatchCircleProfiles')
+            ]).catch(function (error) { profilesLoading = null; throw error; });
         }
         return profilesLoading.then(function () { WatchCircleProfiles.show(memberId); }).catch(function () {
             window.alert('WatchCircle konnte nicht geladen werden. Bitte versuche es erneut.');
+        });
+    }
+    function loadProfileModule(file, globalName) {
+        return new Promise(function (resolve, reject) {
+            if (window[globalName]) { resolve(); return; }
+            let script = document.createElement('script');
+            script.src = getAssetUrl('components/profiles/' + file + '.js');
+            script.addEventListener('load', function () {
+                if (window[globalName]) resolve();
+                else { script.remove(); reject(new Error('Profile module unavailable')); }
+            }, { once: true });
+            script.addEventListener('error', function () { script.remove(); reject(new Error('Profile module unavailable')); }, { once: true });
+            document.head.appendChild(script);
         });
     }
     window.WatchCircleAssets = { getUrl: getAssetUrl, showProfiles: showProfiles };
