@@ -1,7 +1,7 @@
 ---
 name: "WatchCircle"
 guid: "33f774e1-5cb2-4aca-a349-f6ec2bd82c7f"
-version: "1.0.3.0"
+version: "1.0.4.0"
 targetAbi: "12.0.0.0"
 framework: "net9.0"
 overview: "Your groups' watch progress at a glance"
@@ -13,5 +13,5 @@ owner: "romanschenk37"
 artifacts:
   - "Jellyfin.Plugin.WatchCircle.dll"
 changelog: |-
-  - Add a per-group option to automatically include newly created Jellyfin users.
-  - Preserve concurrent membership additions when saving group settings.
+  - Show all eligible group members in one shared progress card on movie and series detail pages.
+  - Keep one row per person who has started the title, including episode progress for series and seasons.

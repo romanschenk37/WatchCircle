@@ -3,11 +3,11 @@
 ![WatchCircle](./thumbnail.svg)
 
 > [!NOTE]
-> WatchCircle is under development. Automatic membership for newly created Jellyfin users is available per group. The inherited features documented below are still present; the planned single progress card and removal of Watch together are not implemented yet.
+> WatchCircle is under development. Shared progress cards and automatic membership for newly created Jellyfin users are available. The inherited Watch together feature remains present; its removal will follow separately.
 
 ## About
 
-**WatchCircle** helps household and friend groups see what everyone has already started watching on your Jellyfin server. An admin creates **watch groups**, picks which Jellyfin users belong to each group, and the web client shows buddy avatars on posters plus **progress cards** on item detail pages so you can compare where everyone left off.
+**WatchCircle** helps household and friend groups see what everyone has already started watching on your Jellyfin server. An admin creates **watch groups**, picks which Jellyfin users belong to each group, and the web client shows buddy avatars on posters plus **one shared progress card** on each item detail page.
 
 Use it to plan the next watch session—or use **Watch together** to record what buddies watched on someone else's device and let them sync that progress to their own account later.
 
@@ -30,7 +30,7 @@ WatchCircle test releases are available through [GitHub Releases](https://github
 3. Select **WatchCircle** and install it.
 4. After installation you must restart the server to enable the plugin (**Dashboard → Restart**).
 
-For the first test on Jellyfin 12.1, disable Binge Buddy and refresh the web client after restarting. Runtime verification on a Jellyfin server is still pending. WatchCircle still has the inherited progress display described below; the shared progress card will follow in a later version.
+For the first test on Jellyfin 12.1, disable Binge Buddy and refresh the web client after restarting. Runtime verification on a Jellyfin server is still pending.
 
 ## How It Works
 
@@ -60,7 +60,7 @@ For each buddy, WatchCircle reads Jellyfin **user data** for the item (or for an
 
 Watch history is retroactive—it counts even if someone watched **before** they were added to a group.
 
-You never see your own avatar on poster overlays; detail cards compare **You** vs **Them** instead.
+Your own account is excluded from the poster overlays and shared progress card. Each other person appears once, even if you share several groups. People without a shared group or without any viewing progress on the title are excluded. If nobody qualifies, the card is hidden.
 
 ### Poster overlays
 
@@ -82,31 +82,27 @@ Poster overlays require the **web UI**. Mobile and TV apps do not load the injec
 
 ### Detail page cards (movies, seasons & series)
 
-On **movie**, **season**, and **series** detail pages, WatchCircle injects a **WatchCircle** section with one card per group mate who has started the title (or any episode in the season or show).
+On **movie**, **season**, and **series** detail pages, WatchCircle injects a **WatchCircle** section with one shared card for all group mates who have started the title (or any episode in the season or show).
 
-Each card shows:
+Each person gets one row, ordered by username, with:
 
-- Buddy **avatar** and **username**
-- A **Progress** block comparing **You** and **Them**
-
-For each row (**You** / **Them**), the card shows:
-
+- Their **avatar** and **username**
 - A status line, for example `45m 3s watched (86%)`, `1h 45m 13s watched (86%)`, or **`Finished`**
-- A rounded progress bar (**gray** for you, **coral** for them)
+- A rounded **coral progress bar**
 
 **Finished** follows Jellyfin’s own played state (someone can finish during credits without being at 100% of the runtime bar). The bar is shown **full** when Jellyfin marks the item as played.
 
 #### Movies
 
-Cards appear at the **bottom** of the details section. Progress is based on that movie’s runtime.
+The shared card appears in the primary details area. Progress is based on that movie’s runtime.
 
 #### Seasons
 
-Cards appear at the **top** of the season view (above the episode list). Progress is based on each person’s **highest started episode** in that season—for example, if a buddy is on episode 7, the card shows **Episode 7** with that episode’s watch time and percentage.
+The shared card appears at the **top** of the season view (above the episode list). Each row shows that person’s **highest started episode** in the season and its watch time and percentage. **Episode finished** refers to that episode, not the entire season.
 
 #### Series
 
-Cards appear on the **series** detail page. Each buddy card shows their furthest started episode across the show (season and episode index, watch time, and percentage).
+The shared card appears on the **series** detail page. Each row shows that person’s furthest started episode across the show (season and episode index, watch time, and percentage). **Episode finished** refers to that episode, not the entire series.
 
 ### Watch together
 
@@ -144,9 +140,9 @@ After validation, the web UI refreshes **poster overlays**, **WatchCircle** deta
 - Pick members with checkboxes and profile avatars
 - Automatically add newly created Jellyfin users to selected groups
 - Avatar stacks on **movie**, **episode**, **season**, and **show** posters in the web client
-- **WatchCircle** detail cards on **movie**, **season**, and **series** pages
-- Side-by-side **You / Them** progress with time watched, percentage, and Jellyfin **Finished** state
-- Season and series cards show the **highest started episode** and that episode’s progress
+- One **WatchCircle** progress card on **movie**, **season**, and **series** pages
+- One row per eligible person with time watched, percentage, and Jellyfin **Finished** state
+- Season and series rows show the **highest started episode** and that episode’s progress
 - Progress based on each user’s Jellyfin watch state (retroactive)
 - **Watch together** — host records shared viewing; buddies validate and sync progress on next login
 - Validation UI with host profile, grouped series/seasons, and selective media approval
@@ -176,9 +172,9 @@ After groups are configured:
 
 1. Sign in to Jellyfin in a **browser**.
 2. **Library browsing** — look at poster thumbnails for stacked buddy avatars (movies, episodes, seasons, shows).
-3. **Movie details** — scroll to **WatchCircle** for You vs Them progress on that film.
-4. **Season details** — **WatchCircle** appears at the top; each card shows the buddy’s furthest episode and progress.
-5. **Series details** — **WatchCircle** shows each buddy’s furthest episode across the show.
+3. **Movie details** — open **WatchCircle** for everyone’s progress in one card.
+4. **Season details** — **WatchCircle** appears at the top; each row shows one person’s furthest episode and progress.
+5. **Series details** — **WatchCircle** shows each person’s furthest episode across the show in the shared card.
 6. **Watch together (host)** — when playback starts, choose buddies on this device; their pending sync is updated when you pause or stop.
 7. **Watch together (buddy)** — on login, confirm watched media in the validation dialog to update your own progress.
 

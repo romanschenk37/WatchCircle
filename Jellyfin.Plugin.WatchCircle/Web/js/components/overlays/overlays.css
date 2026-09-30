@@ -43,32 +43,11 @@
     margin-top: 1.5em;
 }
 
-.wc-detail-buddies-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-}
-
-.wc-detail-buddy-card {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-    width: 20rem;
-    max-width: 20rem;
-    min-width: 0;
-    padding: 0.75rem 0.65rem;
-    border-radius: 0.5rem;
-    background: rgba(255, 255, 255, 0.04);
-    box-sizing: border-box;
-}
-
 .wc-detail-buddy-avatar {
-    width: 4rem;
-    height: 4rem;
+    width: 2.6rem;
+    height: 2.6rem;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.85);
     box-sizing: border-box;
     object-fit: cover;
     display: inline-flex;
@@ -86,24 +65,85 @@
     background: rgba(0, 164, 220, 0.85);
 }
 
-.wc-detail-buddy-name {
-    display: block;
+.wc-shared-progress-card {
     width: 100%;
-    max-width: 100%;
-    min-width: 0;
+    max-width: 48rem;
     box-sizing: border-box;
-    font-size: 0.78rem;
-    line-height: 1.2;
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.65rem;
+    background: rgba(255, 255, 255, 0.04);
 }
 
-.wc-detail-progress {
+.wc-shared-progress-count {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    opacity: 0.7;
+    margin-bottom: 0.25rem;
+}
+
+.wc-shared-progress-members {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wc-shared-progress-member {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    padding: 1rem 0;
+}
+
+.wc-shared-progress-member + .wc-shared-progress-member {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wc-shared-progress-member:last-child {
+    padding-bottom: 0.25rem;
+}
+
+.wc-shared-progress-member .wc-detail-progress-row {
+    flex: 1;
+    min-width: 0;
     gap: 0.55rem;
-    width: 100%;
-    margin-top: 0.15rem;
+}
+
+.wc-shared-progress-member .wc-detail-progress-meta {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+}
+
+.wc-shared-progress-member .wc-detail-progress-label {
+    flex: 1 1 8rem;
+    min-width: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.wc-shared-progress-member .wc-detail-progress-status {
+    flex: 0 1 auto;
+    font-size: 0.78rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+@media (max-width: 40rem) {
+    .wc-shared-progress-card {
+        padding: 0.85rem;
+    }
+
+    .wc-shared-progress-member .wc-detail-progress-meta {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .wc-shared-progress-member .wc-detail-progress-label,
+    .wc-shared-progress-member .wc-detail-progress-status {
+        flex-basis: auto;
+        text-align: start;
+    }
 }

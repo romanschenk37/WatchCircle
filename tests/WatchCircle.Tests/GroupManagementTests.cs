@@ -167,6 +167,23 @@ public class GroupManagementTests
     }
 
     [Fact]
+    public void OnlyDirectlySharedGroupsGrantVisibility()
+    {
+        var viewer = Guid.NewGuid();
+        var firstBuddy = Guid.NewGuid();
+        var secondBuddy = Guid.NewGuid();
+        var outsider = Guid.NewGuid();
+        AddGroup(false).MemberUserIds.AddRange(new[] { viewer, firstBuddy });
+        AddGroup(false).MemberUserIds.AddRange(new[] { viewer, firstBuddy, secondBuddy });
+        AddGroup(false).MemberUserIds.AddRange(new[] { firstBuddy, outsider });
+
+        var members = new GroupMembershipService().GetVisibleMemberIds(viewer);
+
+        Assert.Equal(new[] { firstBuddy, secondBuddy }.Order(), members.Order());
+        Assert.Empty(new GroupMembershipService().GetVisibleMemberIds(Guid.NewGuid()));
+    }
+
+    [Fact]
     public void UnknownGroupsAndInvalidManualUserIdsDoNotChangeMemberships()
     {
         var group = AddGroup(false);

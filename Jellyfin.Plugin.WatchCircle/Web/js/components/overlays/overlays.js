@@ -215,47 +215,6 @@
         };
     }
 
-    function createDetailProgressSection(currentUser, watcher, overlay) {
-        let watchProgress = getWatchProgress();
-        if (!watchProgress) {
-            let fallback = document.createElement('div');
-            fallback.className = 'wc-detail-progress';
-            return fallback;
-        }
-
-        watchProgress.ensureStyles();
-
-        let section = document.createElement('div');
-        section.className = 'wc-detail-progress';
-
-        section.appendChild(watchProgress.createSectionHeading('Progress'));
-
-        let isEpisodeScoped = overlay.isSeason || overlay.isSeries;
-        let youRuntime = isEpisodeScoped
-            ? watchProgress.getProgressRuntime(currentUser, 0)
-            : overlay.runTimeTicks;
-        let themRuntime = isEpisodeScoped
-            ? watchProgress.getProgressRuntime(watcher, 0)
-            : overlay.runTimeTicks;
-
-        section.appendChild(watchProgress.createRow({
-            labelText: 'You',
-            progress: currentUser,
-            runTimeTicks: youRuntime,
-            variant: 'you',
-            showEpisodeLine: isEpisodeScoped
-        }));
-        section.appendChild(watchProgress.createRow({
-            labelText: 'Them',
-            progress: watcher,
-            runTimeTicks: themRuntime,
-            variant: 'them',
-            showEpisodeLine: isEpisodeScoped
-        }));
-
-        return section;
-    }
-
     function getItemOverlayFromResponse(response, itemId) {
         if (!response) {
             return parseItemOverlay(null);
@@ -350,15 +309,13 @@
     function createDetailInitialAvatar(name) {
         let avatar = document.createElement('span');
         avatar.className = 'wc-detail-buddy-avatar wc-detail-buddy-initial';
+        avatar.setAttribute('aria-hidden', 'true');
         avatar.textContent = getInitial(name);
         avatar.title = name;
         return avatar;
     }
 
-    function renderDetailBuddyCard(watcher, overlay) {
-        let card = document.createElement('div');
-        card.className = 'wc-detail-buddy-card';
-
+    function createDetailBuddyAvatar(watcher) {
         let name = watcher.Name || watcher.name || '';
         let imageUrl = resolveImageUrl(watcher.ImageUrl || watcher.imageUrl);
 
@@ -371,23 +328,72 @@
             img.addEventListener('error', function () {
                 img.replaceWith(createDetailInitialAvatar(name));
             });
-            card.appendChild(img);
-        } else {
-            card.appendChild(createDetailInitialAvatar(name));
+            return img;
         }
 
-        let label = document.createElement('span');
-        label.className = 'wc-detail-buddy-name';
-        label.textContent = name;
-        label.title = name;
-        card.appendChild(label);
+        return createDetailInitialAvatar(name);
+    }
 
-        card.appendChild(createDetailProgressSection(
-            overlay.currentUser,
-            watcher,
-            overlay
-        ));
+    function renderSharedProgressCard(overlay) {
+        let card = document.createElement('div');
+        card.className = 'wc-shared-progress-card';
 
+        let count = document.createElement('div');
+        count.className = 'wc-shared-progress-count';
+        count.textContent = overlay.watchers.length === 1
+            ? '1 person from your groups'
+            : overlay.watchers.length + ' people from your groups';
+        card.appendChild(count);
+
+        let list = document.createElement('ul');
+        list.className = 'wc-shared-progress-members';
+        list.setAttribute('aria-label', 'Group members\' watch progress');
+        let watchProgress = getWatchProgress();
+        let isEpisodeScoped = overlay.isSeason || overlay.isSeries;
+
+        overlay.watchers.forEach(function (watcher) {
+            let row = document.createElement('li');
+            row.className = 'wc-shared-progress-member';
+            let avatar = createDetailBuddyAvatar(watcher);
+            avatar.setAttribute('aria-hidden', 'true');
+            row.appendChild(avatar);
+
+            let name = watcher.Name || watcher.name || '';
+            if (watchProgress) {
+                let runtime = isEpisodeScoped
+                    ? watchProgress.getProgressRuntime(watcher, 0)
+                    : overlay.runTimeTicks;
+                let progress = watchProgress.createRow({
+                    labelText: name,
+                    progress: watcher,
+                    runTimeTicks: runtime,
+                    variant: 'them',
+                    showEpisodeLine: isEpisodeScoped,
+                    statusText: isEpisodeScoped && watcher.played ? 'Episode finished' : undefined
+                });
+                let track = progress.querySelector('.wc-detail-progress-track');
+                track.setAttribute('role', 'progressbar');
+                track.setAttribute('aria-label', name);
+                track.setAttribute('aria-valuemin', '0');
+                track.setAttribute('aria-valuemax', '100');
+                track.setAttribute('aria-valuenow', String(watchProgress.getProgressPercent(
+                    watcher.played, watcher.playbackPositionTicks, runtime)));
+                track.setAttribute('aria-valuetext', [
+                    isEpisodeScoped ? watchProgress.formatEpisodeLine(watcher) : '',
+                    isEpisodeScoped && watcher.played ? 'Episode finished' : watchProgress.formatProgressStatus(
+                        watcher.played, watcher.playbackPositionTicks, runtime)
+                ].filter(Boolean).join(', '));
+                row.appendChild(progress);
+            } else {
+                let label = document.createElement('span');
+                label.textContent = name;
+                row.appendChild(label);
+            }
+
+            list.appendChild(row);
+        });
+
+        card.appendChild(list);
         return card;
     }
 
@@ -417,14 +423,7 @@
         title.textContent = 'WatchCircle';
         section.appendChild(title);
 
-        let grid = document.createElement('div');
-        grid.className = 'wc-detail-buddies-grid focuscontainer-x';
-
-        overlay.watchers.forEach(function (watcher) {
-            grid.appendChild(renderDetailBuddyCard(watcher, overlay));
-        });
-
-        section.appendChild(grid);
+        section.appendChild(renderSharedProgressCard(overlay));
 
         let insertAnchor = getDetailInsertAnchor(mountPoint);
         if (insertAnchor) {
