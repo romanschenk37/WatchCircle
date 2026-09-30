@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.__watchCircleNavbarBootstrapped) {
         return;
@@ -54,22 +55,12 @@
         document.head.appendChild(script);
     }
 
-    function findHeaderRightInsertPoint(skinHeader) {
-        let headerRight = skinHeader.querySelector('.headerRight');
-        if (!headerRight) {
-            return null;
-        }
-
-        return headerRight.querySelector('.headerButtonRight:not(.' + NAVBAR_BUTTON_CLASS + ')')
-            || headerRight.firstElementChild;
-    }
-
     function createNavbarButton() {
         let button = document.createElement('button');
         button.type = 'button';
         button.setAttribute('is', 'paper-icon-button-light');
         button.className = 'headerButton headerButtonRight paper-icon-button-light ' + NAVBAR_BUTTON_CLASS;
-        button.title = 'WatchCircle: Watch together';
+        button.title = t('WatchCircle: Watch together');
         button.innerHTML = BUDDY_ICON_SVG;
         button.addEventListener('click', function (event) {
             event.preventDefault();
@@ -84,58 +75,51 @@
         return button;
     }
 
+    function createProfilesButton() {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('is', 'paper-icon-button-light');
+        button.className = 'headerButton headerButtonRight paper-icon-button-light wc-profiles-navbar-button';
+        button.innerHTML = '<svg class="wc-navbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-.32 0-.63.05-.91.14a4.97 4.97 0 010 5.72c.28.09.59.14.91.14zM8 11a3 3 0 100-6 3 3 0 000 6zm8 2c-.29 0-.62.02-.97.05C16.19 13.89 17 15.02 17 16.5V19h6v-2.5c0-2.33-4.67-3.5-7-3.5zM8 13c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg><span class="wc-profiles-navbar-label">WatchCircle</span>';
+        button.addEventListener('click', function (event) {
+            event.preventDefault(); event.stopPropagation(); WatchCircleAssets.showProfiles();
+        });
+        return button;
+    }
+
     function ensureNavbarButton() {
-        let skinHeader = document.querySelector('.skinHeader');
-        if (skinHeader && ApiClient.getCurrentUserId && ApiClient.getCurrentUserId()) {
-            let header = skinHeader.querySelector('.headerRight');
-            if (header && !header.querySelector('.wc-profiles-navbar-button')) {
-                let profiles = document.createElement('button');
-                profiles.type = 'button';
-                profiles.className = 'headerButton headerButtonRight paper-icon-button-light wc-profiles-navbar-button';
-                profiles.title = 'WatchCircle: Personen & Fortschritt';
-                profiles.setAttribute('aria-label', profiles.title);
-                profiles.innerHTML = '<span class="material-icons" aria-hidden="true">people</span><span class="wc-profiles-navbar-label">WatchCircle</span>';
-                profiles.addEventListener('click', function () { WatchCircleAssets.showProfiles(); });
-                header.insertBefore(profiles, header.firstElementChild);
+        const authenticated = typeof ApiClient !== 'undefined' && ApiClient.getCurrentUserId && ApiClient.getCurrentUserId();
+        document.querySelectorAll('.skinHeader .headerRight').forEach(function (header) {
+            if (!authenticated) {
+                header.querySelectorAll('.wc-navbar-button, .wc-profiles-navbar-button').forEach(function (node) { node.remove(); });
+                return;
             }
-        } else if (skinHeader) {
-            let profiles = skinHeader.querySelector('.wc-profiles-navbar-button');
-            if (profiles) profiles.remove();
-        }
-        if (!skinHeader || skinHeader.querySelector('.' + NAVBAR_BUTTON_CLASS)) {
-            return;
-        }
-
-        let button = createNavbarButton();
-        let headerRight = skinHeader.querySelector('.headerRight');
-        let insertBefore = findHeaderRightInsertPoint(skinHeader);
-
-        if (headerRight) {
-            if (insertBefore) {
-                headerRight.insertBefore(button, insertBefore);
-            } else {
-                headerRight.appendChild(button);
-            }
-
-            return;
-        }
-
-        if (insertBefore && insertBefore.parentNode) {
-            insertBefore.parentNode.insertBefore(button, insertBefore);
-        }
+            let together = header.querySelector('.wc-navbar-button');
+            if (!together) { together = createNavbarButton(); header.insertBefore(together, header.firstElementChild); }
+            let profiles = header.querySelector('.wc-profiles-navbar-button');
+            if (!profiles) { profiles = createProfilesButton(); header.insertBefore(profiles, together); }
+            together.title = t('WatchCircle: Watch together');
+            together.setAttribute('aria-label', together.title);
+            profiles.title = t('WatchCircle: People & progress');
+            profiles.setAttribute('aria-label', profiles.title);
+        });
     }
 
-    function bindHeaderListeners() {
-        document.addEventListener(HEADER_RENDERED_EVENT, ensureNavbarButton);
-
-        if (typeof Events !== 'undefined') {
-            Events.on(document, HEADER_RENDERED_EVENT, ensureNavbarButton);
-        }
-
-        document.addEventListener('viewshow', ensureNavbarButton);
+    let scheduled = false;
+    function scheduleUpdate() {
+        if (scheduled) return;
+        scheduled = true;
+        setTimeout(function () { scheduled = false; ensureNavbarButton(); }, 0);
     }
-
+    // Jellyfin can replace the header after authentication or route changes.
+    // Observe child changes only: setting our own titles cannot trigger a loop.
+    new MutationObserver(scheduleUpdate).observe(document.documentElement, { childList: true, subtree: true });
+    new MutationObserver(scheduleUpdate).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+    document.addEventListener(HEADER_RENDERED_EVENT, scheduleUpdate);
+    document.addEventListener('viewshow', scheduleUpdate);
+    window.addEventListener('hashchange', scheduleUpdate);
+    // Covers auth changes that do not replace DOM nodes, including late login.
+    setInterval(function () { if (!document.hidden) scheduleUpdate(); }, 2000);
     loadStylesheet();
-    bindHeaderListeners();
-    ensureNavbarButton();
+    scheduleUpdate();
 })();

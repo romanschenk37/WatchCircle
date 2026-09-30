@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.WatchCircleWatchProgress) {
         return;
@@ -74,30 +75,31 @@
         let seconds = totalSeconds % 60;
 
         if (hours >= 1) {
-            return hours + 'h ' + minutes + 'm ' + seconds + 's';
+            return t("{hours}h {minutes}m {seconds}s", { hours: hours, minutes: minutes, seconds: seconds });
         }
 
-        return minutes + 'm ' + seconds + 's';
+        return t("{minutes}m {seconds}s", { minutes: minutes, seconds: seconds });
     }
 
     function formatCompactStatus(played, playbackPositionTicks, runTimeTicks) {
         if (played) {
-            return 'Finished';
+            return t("Finished");
         }
 
         let watched = formatWatchedDuration(playbackPositionTicks);
         let percent = getProgressPercent(false, playbackPositionTicks, runTimeTicks);
-        return watched + ' (' + percent + '%)';
+        return runTimeTicks > 0 ? watched + ' (' + percent + '%)' : watched;
     }
 
     function formatProgressStatus(played, playbackPositionTicks, runTimeTicks) {
         if (played) {
-            return 'Finished';
+            return t("Finished");
         }
 
         let watched = formatWatchedDuration(playbackPositionTicks);
         let percent = getProgressPercent(false, playbackPositionTicks, runTimeTicks);
-        return watched + ' watched (' + percent + '%)';
+        if (!(runTimeTicks > 0)) return t("{duration} watched", { duration: watched });
+        return t("{duration} watched ({percent}%)", { duration: watched, percent: percent });
     }
 
     function ensureStyles() {
@@ -117,11 +119,11 @@
         let episode = progress.episodeIndexNumber;
 
         if (season !== null && season !== undefined && episode !== null && episode !== undefined) {
-            return 'Season ' + season + ' · Episode ' + episode;
+            return t("Season {season} · Episode {episode}", { season: season, episode: episode });
         }
 
         if (episode !== null && episode !== undefined) {
-            return 'Episode ' + episode;
+            return t("Episode {episode}", { episode: episode });
         }
 
         return '';
@@ -199,7 +201,7 @@
     function createSectionHeading(text) {
         let heading = document.createElement('div');
         heading.className = 'wc-detail-progress-heading';
-        heading.textContent = text || 'Progress';
+        heading.textContent = text || t("Progress");
         return heading;
     }
 

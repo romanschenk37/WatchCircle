@@ -18,6 +18,9 @@ public class LibraryProgressDto
     /// <summary>Gets or sets the number of available episodes.</summary>
     public int TotalEpisodes { get; set; }
 
+    /// <summary>Gets or sets the furthest started episode, using the detail card's progress rules.</summary>
+    public WatchProgressDto? Episode { get; set; }
+
     /// <summary>Gets or sets the current movie position.</summary>
     public long PositionTicks { get; set; }
 

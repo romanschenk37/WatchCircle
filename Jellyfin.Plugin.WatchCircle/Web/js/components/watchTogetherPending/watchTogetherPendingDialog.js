@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.WatchCircleWatchTogetherPendingDialog) {
         return;
@@ -9,13 +10,13 @@
     let DEFAULT_DIALOG_WIDTH = 672;
     let CONTINUE_BUTTON_ID = 'continue';
 
-    let DEFAULTS = {
-        buttons: [{ id: CONTINUE_BUTTON_ID, name: 'Continue', type: 'submit' }],
+    function defaults() { return {
+        buttons: [{ id: CONTINUE_BUTTON_ID, name: t("Continue"), type: 'submit' }],
         maxWidth: DEFAULT_DIALOG_WIDTH,
         requireContinue: true,
-        emptyMediaTitle: 'No media found',
+        emptyMediaTitle: t("No media found"),
         emptyMediaMessage: ''
-    };
+    }; }
 
     function getAssetUrl(path) {
         if (window.WatchCircleAssets) {
@@ -133,7 +134,7 @@
 
         let message = document.createElement('p');
         message.className = 'wc-watch-together-pending-message';
-        message.textContent = 'Hi, we watched these together. Select the media you\'ve seen to update your progress.';
+        message.textContent = t("Hi, we watched these together. Select the media you've seen to update your progress.");
 
         intro.appendChild(profile);
         intro.appendChild(message);
@@ -162,10 +163,10 @@
     function formatSeasonLabel(seasonIndexNumber) {
         let index = Number(seasonIndexNumber);
         if (isNaN(index) || index < 0) {
-            return 'Unknown season';
+            return t("Unknown season");
         }
 
-        return 'Season ' + String(index).padStart(2, '0');
+        return t("Season {season}", { season: String(index).padStart(2, '0') });
     }
 
     function buildMediaTree(mediaItems) {
@@ -182,7 +183,7 @@
                     seriesMap[key] = {
                         type: 'series',
                         seriesId: seriesId,
-                        name: media.SeriesName || 'Unknown series',
+                        name: media.SeriesName || t("Unknown series"),
                         logoUrl: media.SeriesLogoUrl,
                         hasLogo: media.SeriesHasLogo,
                         backdropUrl: media.SeriesBackdropUrl,
@@ -379,7 +380,7 @@
 
                 let fallback = document.createElement('span');
                 fallback.className = 'wc-pending-series-title';
-                fallback.textContent = series.name || 'Unknown series';
+                fallback.textContent = series.name || t("Unknown series");
                 wrap.appendChild(fallback);
             });
             wrap.appendChild(img);
@@ -392,7 +393,7 @@
 
         let fallback = document.createElement('span');
         fallback.className = 'wc-pending-series-title';
-        fallback.textContent = series.name || 'Unknown series';
+        fallback.textContent = series.name || t("Unknown series");
         wrap.appendChild(fallback);
         return wrap;
     }
@@ -407,7 +408,7 @@
         if (hasBackdrop) {
             let title = document.createElement('span');
             title.className = 'wc-pending-series-header-title';
-            title.textContent = series.name || 'Unknown series';
+            title.textContent = series.name || t("Unknown series");
             header.appendChild(title);
         }
 
@@ -475,10 +476,10 @@
         let tree = buildMediaTree(mediaItems);
         if (!tree.length) {
             list.appendChild(WatchCircleMediaSelect.createEmptyState({
-                emptyTitle: (options && options.emptyTitle) || DEFAULTS.emptyMediaTitle,
+                emptyTitle: (options && options.emptyTitle) || defaults().emptyMediaTitle,
                 emptyMessage: (options && options.emptyMessage !== undefined)
                     ? options.emptyMessage
-                    : DEFAULTS.emptyMediaMessage
+                    : defaults().emptyMediaMessage
             }));
             return list;
         }
@@ -504,8 +505,8 @@
     function show(options) {
         ensureStyles();
 
-        let merged = Object.assign({}, DEFAULTS, options || {});
-        let hostName = merged.hostName || 'your buddy';
+        let merged = Object.assign({}, defaults(), options || {});
+        let hostName = merged.hostName || t("your buddy");
         let mediaItems = merged.media || [];
         let mediaListElementRef = { current: null };
 
@@ -564,7 +565,7 @@
     window.WatchCircleWatchTogetherPendingDialog = {
         show: show,
         ensureStyles: ensureStyles,
-        defaults: DEFAULTS,
+        defaults: defaults(),
         buildMediaTree: buildMediaTree
     };
 })();

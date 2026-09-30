@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.WatchCircleWatchTogetherQueueService) {
         return;
@@ -63,7 +64,7 @@
     function normalizeHostQueue(host) {
         return {
             hostId: host.HostId || host.hostId,
-            hostName: host.HostName || host.hostName || 'your buddy',
+            hostName: host.HostName || host.hostName || t("your buddy"),
             hostImageUrl: host.HostImageUrl || host.hostImageUrl || null,
             hostHasPrimaryImage: !!(host.HostHasPrimaryImage || host.hostHasPrimaryImage),
             media: host.Media || host.media || []

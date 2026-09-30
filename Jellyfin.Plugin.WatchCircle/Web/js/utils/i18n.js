@@ -1,0 +1,140 @@
+(function () {
+    'use strict';
+    if (window.WatchCircleI18n) return;
+    // Jellyfin globalize updates <html lang> from the user's display language,
+    // including its automatic-language setting. Do not use the server metadata language.
+    // https://github.com/jellyfin/jellyfin-web/blob/master/src/lib/globalize/index.js
+    const german = {
+        "Unknown media": "Unbekannter Titel",
+        "Started movies": "Begonnene Filme",
+        "Started series": "Begonnene Serien",
+        "Completed movies": "Abgeschlossene Filme",
+        "Completed series": "Abgeschlossene Serien",
+        "Favorite movies": "Favorisierte Filme",
+        "Favorite series": "Favorisierte Serien",
+        "← Back": "← Zurück",
+        "Close": "Schließen",
+        "Close WatchCircle": "WatchCircle schließen",
+        "Try again": "Erneut versuchen",
+        "Loading people…": "Personen werden geladen …",
+        "This profile is unavailable. You must share at least one group.": "Dieses Profil ist nicht verfügbar. Ihr müsst mindestens eine gemeinsame Gruppe haben.",
+        "People who share at least one group with you.": "Personen, mit denen du mindestens eine Gruppe teilst.",
+        "No people in shared groups yet.": "Noch keine Personen in gemeinsamen Gruppen.",
+        "Find a person": "Person suchen",
+        "No person found.": "Keine Person gefunden.",
+        "Could not load people.": "Die Personen konnten nicht geladen werden.",
+        "Loading progress and favorites…": "Fortschritt und Favoriten werden geladen …",
+        "Could not load the profile. You may no longer share a group.": "Das Profil konnte nicht geladen werden. Möglicherweise besteht keine gemeinsame Gruppe mehr.",
+        "Series": "Serie",
+        "Movie": "Film",
+        "You": "Du",
+        "No titles yet.": "Noch keine Titel.",
+        "Show more titles": "Weitere Titel anzeigen",
+        "{name} compared with you": "{name} im Vergleich mit dir",
+        "Series: position in the furthest started episode. Completed means all available episodes, including specials, have been watched.": "Serien: Stand in der am weitesten begonnenen Folge. Abgeschlossen bedeutet, dass alle verfügbaren Folgen inklusive Specials gesehen wurden.",
+        "Show all {count} titles →": "Alle {count} Titel anzeigen →",
+        "{count} titles": "{count} Titel",
+        "Not started": "Nicht begonnen",
+        "Episode finished": "Folge abgeschlossen",
+        "Finished": "Abgeschlossen",
+        "Progress": "Fortschritt",
+        "{duration} watched ({percent}%)": "{duration} gesehen ({percent} %)",
+        "Season {season} · Episode {episode}": "Staffel {season} · Folge {episode}",
+        "Episode {episode}": "Folge {episode}",
+        "{hours}h {minutes}m {seconds}s": "{hours} Std. {minutes} Min. {seconds} Sek.",
+        "{minutes}m {seconds}s": "{minutes} Min. {seconds} Sek.",
+        "{duration} watched": "{duration} gesehen",
+        "Requested by": "Angefragt von",
+        "Group members' watch progress": "Fortschritt der Gruppenmitglieder",
+        "{name}'s WatchCircle profile": "WatchCircle-Profil von {name}",
+        "Season {seasons}": "Staffel {seasons}",
+        "Seasons {seasons}": "Staffeln {seasons}",
+        "1 person from your groups": "1 Person aus deinen Gruppen",
+        "{count} people from your groups": "{count} Personen aus deinen Gruppen",
+        "WatchCircle: Watch together": "WatchCircle: Gemeinsam schauen",
+        "WatchCircle: People & progress": "WatchCircle: Personen & Fortschritt",
+        "Could not load WatchCircle. Please try again.": "WatchCircle konnte nicht geladen werden. Bitte versuche es erneut.",
+        "No users found": "Keine Benutzer gefunden",
+        "Add users in the Jellyfin dashboard first.": "Füge zuerst Benutzer im Jellyfin-Dashboard hinzu.",
+        "No image": "Kein Bild",
+        "No media found": "Keine Medien gefunden",
+        "Continue": "Weiter",
+        "Hi, we watched these together. Select the media you've seen to update your progress.": "Wir haben diese Titel zusammen geschaut. Wähle aus, was du gesehen hast, um deinen Fortschritt zu aktualisieren.",
+        "Unknown season": "Unbekannte Staffel",
+        "Unknown series": "Unbekannte Serie",
+        "your buddy": "dein Mitseher",
+        "Season {season}": "Staffel {season}",
+        "Currently watching media with your buddies on this device ?<br> Select who is watching with you to sync their progress.": "Schaut ihr gerade gemeinsam auf diesem Gerät?<br> Wähle aus, wer mit dir schaut, um den Fortschritt abzugleichen.",
+        "Still watching media with your buddies on this device ?<br> Select who is watching with you to sync their progress.": "Schaut ihr weiterhin gemeinsam auf diesem Gerät?<br> Wähle aus, wer mit dir schaut, um den Fortschritt abzugleichen.",
+        "No buddies found": "Keine Mitseher gefunden",
+        "Organize watch groups and choose which Jellyfin users belong to each one.": "Verwalte Gruppen und wähle aus, welche Jellyfin-Benutzer dazugehören.",
+        "Create a group": "Neue Gruppe",
+        "Give your group a name, then manage its members from the card below.": "Gib deiner Gruppe einen Namen. Danach kannst du über ihre Kachel die Mitglieder verwalten.",
+        "Group name": "Gruppenname",
+        "Create group": "Gruppe erstellen",
+        "Your groups": "Deine Gruppen",
+        "No groups yet": "Noch keine Gruppen",
+        "Create your first group in the section above.": "Erstelle oben deine erste Gruppe.",
+        "Seerr requests": "Seerr-Anfragen",
+        "Optionally show who requested a movie or series. All requesters are shown, including people outside your groups and people who have not started watching.": "Zeige auf Wunsch, wer einen Film oder eine Serie angefragt hat. Alle Antragsteller werden angezeigt, auch außerhalb deiner Gruppen und ohne begonnenen Fortschritt.",
+        "Show who requested this title in Seerr": "Antragsteller aus Seerr anzeigen",
+        "Seerr URL": "Seerr-URL",
+        "Use an address reachable from your Jellyfin server. A reverse-proxy subpath is supported.": "Verwende eine von deinem Jellyfin-Server erreichbare Adresse. Unterpfade eines Reverse-Proxys werden unterstützt.",
+        "Seerr API key": "Seerr-API-Schlüssel",
+        "Enter the API key from Seerr's general settings. Leave blank to keep a saved key.": "Gib den API-Schlüssel aus den allgemeinen Seerr-Einstellungen ein. Leer lassen, um den gespeicherten Schlüssel zu behalten.",
+        "Remove the saved API key": "Gespeicherten API-Schlüssel entfernen",
+        "Save Seerr settings": "Seerr-Einstellungen speichern",
+        "Save and test connection": "Speichern und Verbindung testen",
+        "← Back to groups": "← Zurück zu den Gruppen",
+        "Members": "Mitglieder",
+        "Choose the members and whether new Jellyfin accounts should join automatically.": "Wähle die Mitglieder und lege fest, ob neue Jellyfin-Benutzer automatisch beitreten.",
+        "Automatically add new users": "Neue Benutzer automatisch hinzufügen",
+        "Applies to Jellyfin accounts created after you save this setting. Existing accounts stay unchanged. Turning it off keeps current members.": "Gilt für Jellyfin-Benutzer, die nach dem Speichern neu erstellt werden. Bestehende Konten bleiben unverändert. Beim Ausschalten bleiben die bisherigen Mitglieder erhalten.",
+        "Save group": "Gruppe speichern",
+        "Delete group": "Gruppe löschen",
+        "e.g. Friday Night Crew": "z. B. Filmabend",
+        "1 member": "1 Mitglied",
+        "{count} members": "{count} Mitglieder",
+        "Group: {name}": "Gruppe: {name}",
+        "Manage group →": "Gruppe verwalten →",
+        "Delete the group \"{name}\"? This cannot be undone.": "Gruppe „{name}“ löschen? Dies kann nicht rückgängig gemacht werden.",
+        "Auto-add: on": "Automatisch hinzufügen: an",
+        "Auto-add: off": "Automatisch hinzufügen: aus",
+        "Save failed": "Speichern fehlgeschlagen",
+        "Could not save plugin settings. Please try again.": "Die Plugin-Einstellungen konnten nicht gespeichert werden. Bitte versuche es erneut.",
+        "Load failed": "Laden fehlgeschlagen",
+        "Could not load plugin settings. Please refresh the page.": "Die Plugin-Einstellungen konnten nicht geladen werden. Bitte lade die Seite neu.",
+        "An API key is saved. Leave blank to keep it. Enter the key again when changing the URL.": "Ein API-Schlüssel ist gespeichert. Leer lassen, um ihn zu behalten. Bei einer Änderung der URL den Schlüssel erneut eingeben.",
+        "No API key saved. Copy it from Seerr → Settings → General.": "Kein API-Schlüssel gespeichert. Kopiere ihn aus Seerr → Einstellungen → Allgemein.",
+        "Could not load Seerr settings.": "Die Seerr-Einstellungen konnten nicht geladen werden.",
+        "Saving…": "Wird gespeichert …",
+        "Seerr settings saved.": "Seerr-Einstellungen gespeichert.",
+        "Settings saved. Testing connection…": "Einstellungen gespeichert. Verbindung wird getestet …",
+        "Connected to Seerr successfully.": "Verbindung zu Seerr erfolgreich.",
+        "Settings saved, but the connection failed. Check the URL, API key and network access from Jellyfin.": "Einstellungen gespeichert, aber die Verbindung ist fehlgeschlagen. Prüfe URL, API-Schlüssel und Netzwerkzugriff von Jellyfin.",
+        "Could not save or test Seerr settings. Check the URL and API key. Enter the key again when changing the URL; disable the integration before removing it.": "Die Seerr-Einstellungen konnten nicht gespeichert oder getestet werden. Prüfe URL und API-Schlüssel. Gib den Schlüssel bei einer URL-Änderung erneut ein. Deaktiviere die Verbindung, bevor du den Schlüssel entfernst.",
+        "Group name required": "Gruppenname erforderlich",
+        "Please enter a name for the new group.": "Bitte gib einen Namen für die neue Gruppe ein.",
+        "Duplicate group name": "Gruppenname bereits vorhanden",
+        "A group with this name already exists.": "Eine Gruppe mit diesem Namen existiert bereits.",
+        "Delete Group": "Gruppe löschen"
+    };
+    function locale() {
+        return (document.documentElement.getAttribute('lang') || 'en').toLowerCase().replace(/_/g, '-');
+    }
+    function t(key, values) {
+        const language = locale().split('-')[0];
+        const translated = language === 'de' && Object.prototype.hasOwnProperty.call(german, key) ? german[key] : key;
+        return translated.replace(/\{(\w+)\}/g, function (match, name) {
+            return values && Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match;
+        });
+    }
+    window.WatchCircleI18n = { t: t, locale: locale };
+    let previousLocale = locale();
+    new MutationObserver(function () {
+        const current = locale();
+        if (current === previousLocale) return;
+        previousLocale = current;
+        document.dispatchEvent(new Event('watchcirclelanguagechange'));
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+})();

@@ -11,8 +11,8 @@
 .wc-profiles-dialog button, .wc-profiles-dialog input { font: inherit; }
 .wc-profiles-dialog button { cursor: pointer; }
 .wc-profiles-dialog [hidden] { display: none !important; }
-.wc-profile-action, .wc-profile-search, .wc-profile-all { color: inherit; background: #272a30; border: 1px solid #ffffff24; border-radius: 5px; padding: .75em 1em; min-height: 46px; }
-.wc-profile-action:hover, .wc-profile-all:hover { background: #373c45; }
+.wc-profile-action, .wc-profile-search { color: inherit; background: #272a30; border: 1px solid #ffffff24; border-radius: 5px; padding: .75em 1em; min-height: 46px; }
+.wc-profile-action:hover { background: #373c45; }
 .wc-profile-close { margin-left: auto; flex-shrink: 0; }
 .wc-profile-back { flex-shrink: 0; }
 .wc-profile-subtitle { color: #b7bbc4; font-size: .9em; line-height: 1.5; margin: 0; }
@@ -31,7 +31,6 @@
 .wc-profile-shelf-heading { display: flex; align-items: center; gap: .75em; margin-bottom: .4em; }
 .wc-profile-shelf-heading h3 { font-size: 1.35em; font-weight: 600; margin: 0; }
 .wc-profile-count { color: #b5b9c3; font-size: .9em; }
-.wc-profile-all { margin-left: auto; padding: .45em .7em; font-size: .85em !important; background: transparent; border-color: transparent; }
 .wc-profile-rail { display: flex; overflow-x: auto; overflow-y: hidden; margin: 0 -.6em; padding: .6em; list-style: none; scrollbar-width: thin; scrollbar-color: #686d78 #17191d; }
 .wc-profile-rail::-webkit-scrollbar { height: 7px; }
 .wc-profile-rail::-webkit-scrollbar-thumb { background: #686d78; border-radius: 4px; }
@@ -47,13 +46,13 @@
 .wc-profile-title-copy h3 { font-size: 1em; font-weight: 600; margin: 0 0 .35em; line-height: 1.35; min-height: 2.7em; overflow-wrap: anywhere; }
 .wc-profile-year { display: block; color: #b7bbc4; font-size: .8em; margin-bottom: 1em; }
 .wc-profile-progress + .wc-profile-progress { margin-top: .8em; }
-.wc-profile-progress-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .2em .5em; line-height: 1.35; font-size: .75em; margin-bottom: .35em; }
-.wc-profile-progress-name { color: #cfb0ff; overflow-wrap: anywhere; }
-.wc-profile-progress-status { color: #d4d8e3; }
-.wc-profile-progress-you .wc-profile-progress-name { color: #7bdaf4; }
-.wc-profile-track { height: 5px; background: #ffffff20; border-radius: 5px; overflow: hidden; }
-.wc-profile-fill { height: 100%; background: #b58eec; border-radius: inherit; }
-.wc-profile-progress-you .wc-profile-fill { background: #55c6e6; }
+.wc-profile-heading-link { color: inherit; background: transparent; border: 0; padding: .4em 0; text-align: left; min-height: 46px; border-radius: 4px; }
+.wc-profile-heading-link:hover { color: #fff; text-decoration: underline; }
+.wc-profile-progress .wc-detail-progress-meta { flex-wrap: wrap; gap: .25em; font-size: .75em; line-height: 1.4; }
+.wc-profile-progress .wc-detail-progress-label { overflow-wrap: anywhere; flex-shrink: 1; font-size: inherit; }
+.wc-profile-progress .wc-detail-progress-status { margin-left: 0; white-space: normal; font-size: inherit; }
+.wc-profile-progress .wc-detail-progress-episode { font-size: .75em; line-height: 1.5; }
+.wc-profile-progress .wc-detail-progress-track { height: 5px; }
 .wc-profile-empty { color: #a5aab5; font-size: .9em; margin: .5em 0 1em; }
 .wc-profile-collection-grid { display: flex; flex-wrap: wrap; list-style: none; margin: 1.5em 0; padding: .4em; }
 .wc-profile-collection-grid > .wc-profile-title-card { width: 11.5em; margin: .75em; }
@@ -67,7 +66,7 @@
 }
 .wc-profiles-dialog a:focus, .wc-profiles-dialog button:focus { background-color: #293849; }
 .layout-tv .wc-profiles-dialog { --wc-profile-card-width: 12em; }
-.layout-tv .wc-profile-progress-meta { font-size: .85em; }
+.layout-tv .wc-profile-progress .wc-detail-progress-meta { font-size: .85em; }
 @media (min-width: 1800px) { .wc-profiles-dialog { --wc-profile-card-width: 13em; } }
 @media (max-width: 650px) {
     .wc-profiles-dialog { --wc-profile-card-width: 10em; }
@@ -76,7 +75,6 @@
     .wc-profiles-body { padding: 1.25em 1em 2em; }
     .wc-profile-back, .wc-profile-close { padding: .6em; font-size: .8em !important; }
     .wc-profile-shelf-heading h3 { font-size: 1.05em; }
-    .wc-profile-all { font-size: .75em !important; }
     .wc-profile-collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1em; }
     .wc-profile-people { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1em; }
     .wc-profile-intro .wc-profile-subtitle { font-size: .8em; }

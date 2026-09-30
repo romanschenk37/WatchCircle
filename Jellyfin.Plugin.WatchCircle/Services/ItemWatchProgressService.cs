@@ -354,6 +354,21 @@ public class ItemWatchProgressService : IItemWatchProgressService
         return season.GetEpisodes(user, new DtoOptions(true), shouldIncludeMissingEpisodes: true);
     }
 
+    internal static WatchProgressDto? GetFurthestEpisodeProgress(IReadOnlyList<BaseItem> episodes, ILookup<Guid, UserData> rows)
+    {
+        WatchProgressDto? result = null;
+        foreach (var (itemId, metadata) in BuildEpisodeMetadata(episodes, includeSeasonNumber: true))
+        {
+            foreach (var row in rows[itemId].Where(HasStartedWatching))
+            {
+                var incoming = MapEpisodeWatchProgress(row, metadata, includeSeasonNumber: true);
+                result = result is null ? incoming : MergeEpisodeWatchProgress(result, incoming, compareSeason: true);
+            }
+        }
+
+        return result;
+    }
+
     private static Dictionary<Guid, EpisodeMetadata> BuildEpisodeMetadata(
         IReadOnlyList<BaseItem> episodes,
         bool includeSeasonNumber = false)

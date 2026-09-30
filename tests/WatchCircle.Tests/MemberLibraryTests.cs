@@ -176,6 +176,71 @@ public class MemberLibraryTests
     }
 
     [Fact]
+    public void ProfilesExposeIndependentFurthestEpisodePositionsAcrossSeasons()
+    {
+        var (_, episodes) = Series(4);
+        episodes[2].ParentIndexNumber = 2;
+        episodes[2].IndexNumber = 1;
+        episodes[3].ParentIndexNumber = 2;
+        episodes[3].IndexNumber = 2;
+        var result = Assert.Single(_service.BuildItems(_viewer.Id, _memberId, new[]
+        {
+            Row(episodes[2].Id, position: 40), Row(episodes[0].Id, played: true),
+            Row(episodes[1].Id, user: _viewer.Id, position: 75)
+        }));
+        Assert.Equal(2, result.Member.Episode!.SeasonIndexNumber);
+        Assert.Equal(1, result.Member.Episode.EpisodeIndexNumber);
+        Assert.Equal(40, result.Member.Episode.PlaybackPositionTicks);
+        Assert.Equal(100, result.Member.Episode.EpisodeRunTimeTicks);
+        Assert.False(result.Member.Episode.Played);
+        Assert.Equal(1, result.You.Episode!.SeasonIndexNumber);
+        Assert.Equal(2, result.You.Episode.EpisodeIndexNumber);
+        Assert.Equal(75, result.You.Episode.PlaybackPositionTicks);
+    }
+
+    [Fact]
+    public void FinishedEpisodeDoesNotMakeUnfinishedSeriesComplete()
+    {
+        var (_, episodes) = Series(3);
+        var result = Assert.Single(_service.BuildItems(_viewer.Id, _memberId, new[]
+        {
+            Row(episodes[1].Id, played: true), Row(episodes[1].Id, position: 60)
+        }));
+        Assert.Equal("started", result.Category);
+        Assert.True(result.Member.Episode!.Played);
+        Assert.Equal(2, result.Member.Episode.EpisodeIndexNumber);
+        Assert.Null(result.You.Episode);
+    }
+
+    [Fact]
+    public void FavoriteEpisodeIsNotAStartedEpisodeAndLatestPlaybackDateDoesNotOverridePosition()
+    {
+        var (_, episodes) = Series(3);
+        var rewatch = Row(episodes[0].Id, position: 10);
+        rewatch.LastPlayedDate = DateTime.UtcNow;
+        var result = Assert.Single(_service.BuildItems(_viewer.Id, _memberId, new[]
+        {
+            rewatch, Row(episodes[1].Id, position: 50), Row(episodes[2].Id, favorite: true)
+        }));
+        Assert.Equal(2, result.Member.Episode!.EpisodeIndexNumber);
+        Assert.Equal(50, result.Member.Episode.PlaybackPositionTicks);
+    }
+
+    [Fact]
+    public void ProfileEpisodeUsesDetailCardFallbackForMissingNumbersAndSpecials()
+    {
+        var (_, episodes) = Series(1);
+        episodes[0].ParentIndexNumber = 0;
+        episodes[0].IndexNumber = null;
+        var row = Row(episodes[0].Id);
+        row.PlayCount = 1;
+        var result = Assert.Single(_service.BuildItems(_viewer.Id, _memberId, new[] { row }));
+        Assert.Null(result.Member.Episode!.SeasonIndexNumber);
+        Assert.Equal(1, result.Member.Episode.EpisodeIndexNumber);
+        Assert.Equal("started", result.Category);
+    }
+
+    [Fact]
     public void ResumeAtEndDoesNotOverrideJellyfinPlayedFlag()
     {
         var movie = Movie("End");

@@ -8,7 +8,7 @@
     <div id="WatchCircleConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
         <div data-role="content">
             <div class="content-primary">
-                <p id="wcPageIntro" class="wc-page-intro">
+                <p id="wcPageIntro" class="wc-page-intro" data-wc-text="Organize watch groups and choose which Jellyfin users belong to each one.">
                     Organize watch groups and choose which Jellyfin users belong to each one.
                 </p>
 
@@ -16,18 +16,18 @@
                     <section class="wc-section" aria-labelledby="wcCreateSectionTitle">
                         <div class="wc-section-header wc-section-header-compact">
                             <div>
-                                <h2 id="wcCreateSectionTitle" class="wc-section-title">Create a group</h2>
-                                <p class="wc-section-subtitle">Give your group a name, then manage its members from the card below.</p>
+                                <h2 id="wcCreateSectionTitle" class="wc-section-title" data-wc-text="Create a group">Create a group</h2>
+                                <p class="wc-section-subtitle" data-wc-text="Give your group a name, then manage its members from the card below.">Give your group a name, then manage its members from the card below.</p>
                             </div>
                         </div>
 
                         <div class="wc-create-row">
                             <div class="inputContainer">
-                                <label class="inputLabel inputLabelUnfocused" for="newGroupName">Group name</label>
-                                <input id="newGroupName" name="newGroupName" type="text" is="emby-input" maxlength="100" placeholder="e.g. Friday Night Crew" />
+                                <label class="inputLabel inputLabelUnfocused" for="newGroupName" data-wc-text="Group name">Group name</label>
+                                <input id="newGroupName" name="newGroupName" type="text" is="emby-input" maxlength="100" placeholder="e.g. Friday Night Crew" data-wc-placeholder="e.g. Friday Night Crew" />
                             </div>
                             <button is="emby-button" type="button" id="createGroupButton" class="raised button-submit emby-button">
-                                <span>Create group</span>
+                                <span data-wc-text="Create group">Create group</span>
                             </button>
                         </div>
                     </section>
@@ -35,47 +35,47 @@
                     <section class="wc-section" aria-labelledby="wcGroupsSectionTitle">
                         <div class="wc-section-header">
                             <div>
-                                <h2 id="wcGroupsSectionTitle" class="wc-section-title">Your groups</h2>
+                                <h2 id="wcGroupsSectionTitle" class="wc-section-title" data-wc-text="Your groups">Your groups</h2>
                             </div>
                         </div>
 
                         <div id="groupsGrid" class="wc-groups-grid"></div>
 
                         <div id="groupsEmptyState" class="wc-empty-state" data-wc-hidden="true">
-                            <p class="wc-empty-state-title">No groups yet</p>
-                            <p>Create your first group in the section above.</p>
+                            <p class="wc-empty-state-title" data-wc-text="No groups yet">No groups yet</p>
+                            <p data-wc-text="Create your first group in the section above.">Create your first group in the section above.</p>
                         </div>
                     </section>
 
                     <section class="wc-section" aria-labelledby="wcSeerrTitle">
                         <div class="wc-section-header">
                             <div>
-                                <h2 id="wcSeerrTitle" class="wc-section-title">Seerr requests</h2>
-                                <p class="wc-section-subtitle">Optionally show who requested a movie or series. All requesters are shown, including people outside your groups and people who have not started watching.</p>
+                                <h2 id="wcSeerrTitle" class="wc-section-title" data-wc-text="Seerr requests">Seerr requests</h2>
+                                <p class="wc-section-subtitle" data-wc-text="Optionally show who requested a movie or series. All requesters are shown, including people outside your groups and people who have not started watching.">Optionally show who requested a movie or series. All requesters are shown, including people outside your groups and people who have not started watching.</p>
                             </div>
                         </div>
                         <form id="seerrSettingsForm">
                             <label class="emby-checkbox-label">
                                 <input is="emby-checkbox" id="seerrEnabled" type="checkbox" />
-                                <span>Show who requested this title in Seerr</span>
+                                <span data-wc-text="Show who requested this title in Seerr">Show who requested this title in Seerr</span>
                             </label>
                             <div class="inputContainer" style="margin-top:1.25em">
-                                <label class="inputLabel" for="seerrUrl">Seerr URL</label>
+                                <label class="inputLabel" for="seerrUrl" data-wc-text="Seerr URL">Seerr URL</label>
                                 <input is="emby-input" id="seerrUrl" type="url" maxlength="1024" placeholder="http://seerr:5055" />
-                                <div class="fieldDescription">Use an address reachable from your Jellyfin server. A reverse-proxy subpath is supported.</div>
+                                <div class="fieldDescription" data-wc-text="Use an address reachable from your Jellyfin server. A reverse-proxy subpath is supported.">Use an address reachable from your Jellyfin server. A reverse-proxy subpath is supported.</div>
                             </div>
                             <div class="inputContainer">
-                                <label class="inputLabel" for="seerrApiKey">Seerr API key</label>
+                                <label class="inputLabel" for="seerrApiKey" data-wc-text="Seerr API key">Seerr API key</label>
                                 <input is="emby-input" id="seerrApiKey" type="password" maxlength="512" autocomplete="new-password" />
-                                <div id="seerrKeyHelp" class="fieldDescription">Enter the API key from Seerr's general settings. Leave blank to keep a saved key.</div>
+                                <div id="seerrKeyHelp" class="fieldDescription" data-wc-text="Enter the API key from Seerr's general settings. Leave blank to keep a saved key.">Enter the API key from Seerr's general settings. Leave blank to keep a saved key.</div>
                             </div>
                             <label class="emby-checkbox-label">
                                 <input is="emby-checkbox" id="seerrClearKey" type="checkbox" />
-                                <span>Remove the saved API key</span>
+                                <span data-wc-text="Remove the saved API key">Remove the saved API key</span>
                             </label>
                             <div class="wc-actions-bar">
-                                <button is="emby-button" type="submit" class="raised button-submit emby-button"><span>Save Seerr settings</span></button>
-                                <button is="emby-button" type="button" id="seerrTestButton" class="raised emby-button"><span>Save and test connection</span></button>
+                                <button is="emby-button" type="submit" class="raised button-submit emby-button"><span data-wc-text="Save Seerr settings">Save Seerr settings</span></button>
+                                <button is="emby-button" type="button" id="seerrTestButton" class="raised emby-button"><span data-wc-text="Save and test connection">Save and test connection</span></button>
                             </div>
                             <p id="seerrStatus" class="wc-section-subtitle" role="status" aria-live="polite"></p>
                         </form>
@@ -85,7 +85,7 @@
                 <div id="groupDetailView" data-wc-hidden="true">
                     <div class="wc-detail-top">
                         <button is="emby-button" type="button" id="backToGroupsButton" class="raised emby-button">
-                            <span>← Back to groups</span>
+                            <span data-wc-text="← Back to groups">← Back to groups</span>
                         </button>
                         <h2 id="groupDetailTitle" class="wc-detail-page-title"></h2>
                     </div>
@@ -93,8 +93,8 @@
                     <section class="wc-section" aria-labelledby="wcMembersSectionTitle">
                         <div class="wc-section-header">
                             <div>
-                                <h2 id="wcMembersSectionTitle" class="wc-section-title">Members</h2>
-                                <p class="wc-section-subtitle">Choose the members and whether new Jellyfin accounts should join automatically.</p>
+                                <h2 id="wcMembersSectionTitle" class="wc-section-title" data-wc-text="Members">Members</h2>
+                                <p class="wc-section-subtitle" data-wc-text="Choose the members and whether new Jellyfin accounts should join automatically.">Choose the members and whether new Jellyfin accounts should join automatically.</p>
                             </div>
                         </div>
 
@@ -102,19 +102,19 @@
                             <div class="wc-auto-add-setting">
                                 <label class="emby-checkbox-label">
                                     <input is="emby-checkbox" type="checkbox" id="autoAddNewUsers" aria-describedby="autoAddNewUsersHelp" />
-                                    <span>Automatically add new users</span>
+                                    <span data-wc-text="Automatically add new users">Automatically add new users</span>
                                 </label>
-                                <p id="autoAddNewUsersHelp" class="wc-section-subtitle">Applies to Jellyfin accounts created after you save this setting. Existing accounts stay unchanged. Turning it off keeps current members.</p>
+                                <p id="autoAddNewUsersHelp" class="wc-section-subtitle" data-wc-text="Applies to Jellyfin accounts created after you save this setting. Existing accounts stay unchanged. Turning it off keeps current members.">Applies to Jellyfin accounts created after you save this setting. Existing accounts stay unchanged. Turning it off keeps current members.</p>
                             </div>
                             <div id="usersList" class="wc-user-select wc-users-list checkboxListContainer"></div>
 
                             <div class="wc-actions-bar">
                                 <button is="emby-button" type="submit" class="raised button-submit emby-button">
-                                    <span>Save group</span>
+                                    <span data-wc-text="Save group">Save group</span>
                                 </button>
                                 <div class="wc-danger-zone">
                                     <button is="emby-button" type="button" id="deleteGroupButton" class="raised emby-button wc-danger-button">
-                                        <span>Delete group</span>
+                                        <span data-wc-text="Delete group">Delete group</span>
                                     </button>
                                 </div>
                             </div>
@@ -125,6 +125,26 @@
         </div>
 
         <script type="text/javascript">
+            function t(key, values) { return window.WatchCircleI18n ? WatchCircleI18n.t(key, values) : key; }
+            function ensureTranslations() {
+                if (window.WatchCircleI18n) return Promise.resolve();
+                if (!window.__watchCircleI18nLoading) {
+                    window.__watchCircleI18nLoading = new Promise(function (resolve, reject) {
+                        var script = document.createElement('script');
+                        script.src = ApiClient.getUrl('WatchCircle/js/utils/i18n.js');
+                        script.onload = resolve;
+                        script.onerror = function () { script.remove(); window.__watchCircleI18nLoading = null; reject(new Error('Translations unavailable')); };
+                        document.head.appendChild(script);
+                    });
+                }
+                return window.__watchCircleI18nLoading;
+            }
+            function translatePage() {
+                var page = document.querySelector('#WatchCircleConfigPage');
+                page.querySelectorAll('[data-wc-text]').forEach(function (node) { node.textContent = t(node.getAttribute('data-wc-text')); });
+                page.querySelectorAll('[data-wc-placeholder]').forEach(function (node) { node.placeholder = t(node.getAttribute('data-wc-placeholder')); });
+            }
+
             function injectWatchCircleStyles() {
                 var styleId = 'watchcircle-config-styles';
                 var existingStyle = document.getElementById(styleId);
@@ -402,11 +422,11 @@
             }
 
             function memberCountLabel(count) {
-                return count === 1 ? '1 member' : count + ' members';
+                return t(count === 1 ? "1 member" : "{count} members", { count: count });
             }
 
             function updateDetailTitle(group) {
-                document.querySelector('#groupDetailTitle').textContent = 'Group: ' + group.Name;
+                document.querySelector('#groupDetailTitle').textContent = t("Group: {name}", { name: group.Name });
             }
 
             function showListView() {
@@ -476,7 +496,7 @@
                     meta.appendChild(badge);
                     var autoAddBadge = document.createElement('span');
                     autoAddBadge.className = 'wc-badge';
-                    autoAddBadge.textContent = group.AutoAddNewUsers ? 'Auto-add: on' : 'Auto-add: off';
+                    autoAddBadge.textContent = group.AutoAddNewUsers ? t("Auto-add: on") : t("Auto-add: off");
                     meta.appendChild(autoAddBadge);
                     body.appendChild(name);
                     body.appendChild(meta);
@@ -490,7 +510,7 @@
                     manageButton.type = 'button';
                     manageButton.className = 'raised emby-button';
                     manageButton.setAttribute('is', 'emby-button');
-                    manageButton.innerHTML = '<span>Manage group →</span>';
+                    manageButton.textContent = t("Manage group →");
                     manageButton.addEventListener('click', function (event) {
                         event.stopPropagation();
                         openGroup(group.Id);
@@ -570,8 +590,8 @@
                             .catch(function () {
                                 Dashboard.hideLoadingMsg();
                                 Dashboard.alert({
-                                    title: 'Save failed',
-                                    message: 'Could not save plugin settings. Please try again.'
+                                    title: t("Save failed"),
+                                    message: t("Could not save plugin settings. Please try again.")
                                 });
                             })
                             .finally(function () {
@@ -585,7 +605,7 @@
             function loadPageData() {
                 Dashboard.showLoadingMsg();
 
-                ensureUserSelectModule()
+                ensureTranslations().then(function () { translatePage(); return ensureUserSelectModule(); })
                     .then(function () {
                         var configPromise = reloadConfiguration();
 
@@ -615,8 +635,8 @@
                     .catch(function () {
                         Dashboard.hideLoadingMsg();
                         Dashboard.alert({
-                            title: 'Load failed',
-                            message: 'Could not load plugin settings. Please refresh the page.'
+                            title: t("Load failed"),
+                            message: t("Could not load plugin settings. Please refresh the page.")
                         });
                     });
             }
@@ -629,14 +649,14 @@
                 document.querySelector('#seerrApiKey').value = '';
                 document.querySelector('#seerrClearKey').checked = false;
                 document.querySelector('#seerrKeyHelp').textContent = (settings.HasApiKey || settings.hasApiKey)
-                    ? 'An API key is saved. Leave blank to keep it. Enter the key again when changing the URL.'
-                    : 'No API key saved. Copy it from Seerr → Settings → General.';
+                    ? t("An API key is saved. Leave blank to keep it. Enter the key again when changing the URL.")
+                    : t("No API key saved. Copy it from Seerr → Settings → General.");
             }
 
             function loadSeerrSettings() {
                 return ApiClient.ajax({ type: 'GET', url: ApiClient.getUrl('WatchCircle/Seerr/Settings'), dataType: 'json' })
                     .then(applySeerrSettings)
-                    .catch(function () { document.querySelector('#seerrStatus').textContent = 'Could not load Seerr settings.'; });
+                    .catch(function () { document.querySelector('#seerrStatus').textContent = t("Could not load Seerr settings."); });
             }
 
             var seerrSaving = false;
@@ -653,21 +673,21 @@
                 seerrSaving = true;
                 form.querySelectorAll('input, button').forEach(function (control) { control.disabled = true; });
                 var status = document.querySelector('#seerrStatus');
-                status.textContent = 'Saving…';
+                status.textContent = t("Saving…");
                 ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('WatchCircle/Seerr/Settings'), contentType: 'application/json', dataType: 'json', data: JSON.stringify(payload) })
                     .then(function (settings) {
                         applySeerrSettings(settings);
-                        status.textContent = 'Seerr settings saved.';
+                        status.textContent = t("Seerr settings saved.");
                         if (testConnection) {
-                            status.textContent = 'Settings saved. Testing connection…';
+                            status.textContent = t("Settings saved. Testing connection…");
                             return ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('WatchCircle/Seerr/Test'), dataType: 'json' })
                                 .then(function (connected) {
-                                    status.textContent = connected ? 'Connected to Seerr successfully.' : 'Settings saved, but the connection failed. Check the URL, API key and network access from Jellyfin.';
+                                    status.textContent = connected ? t("Connected to Seerr successfully.") : t("Settings saved, but the connection failed. Check the URL, API key and network access from Jellyfin.");
                                 });
                         }
                     })
                     .catch(function () {
-                        status.textContent = 'Could not save or test Seerr settings. Check the URL and API key. Enter the key again when changing the URL; disable the integration before removing it.';
+                        status.textContent = t("Could not save or test Seerr settings. Check the URL and API key. Enter the key again when changing the URL; disable the integration before removing it.");
                     })
                     .finally(function () {
                         seerrSaving = false;
@@ -694,8 +714,8 @@
 
                     if (!name) {
                         Dashboard.alert({
-                            title: 'Group name required',
-                            message: 'Please enter a name for the new group.'
+                            title: t("Group name required"),
+                            message: t("Please enter a name for the new group.")
                         });
                         return;
                     }
@@ -706,8 +726,8 @@
 
                     if (duplicate) {
                         Dashboard.alert({
-                            title: 'Duplicate group name',
-                            message: 'A group with this name already exists.'
+                            title: t("Duplicate group name"),
+                            message: t("A group with this name already exists.")
                         });
                         return;
                     }
@@ -787,8 +807,8 @@
                     var groupName = group.Name;
 
                     Dashboard.confirm(
-                        'Delete the group "' + groupName + '"? This cannot be undone.',
-                        'Delete Group',
+                        t("Delete the group \"{name}\"? This cannot be undone.", { name: groupName }),
+                        t("Delete Group"),
                         function (confirmed) {
                             if (!confirmed) {
                                 return;

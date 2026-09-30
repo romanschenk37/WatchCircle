@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.WatchCircleUserSelect) {
         return;
@@ -191,13 +192,13 @@
 
         let title = document.createElement('p');
         title.className = 'wc-user-select-empty-title';
-        title.textContent = options.emptyTitle || 'No users found';
+        title.textContent = options.emptyTitle || t("No users found");
 
         empty.appendChild(title);
 
         let messageText = options.emptyMessage;
         if (messageText === undefined) {
-            messageText = 'Add users in the Jellyfin dashboard first.';
+            messageText = t("Add users in the Jellyfin dashboard first.");
         }
 
         if (messageText) {

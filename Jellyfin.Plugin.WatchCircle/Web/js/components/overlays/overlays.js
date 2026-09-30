@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (typeof ApiClient === 'undefined') {
         return;
@@ -346,7 +347,7 @@
             attribution.className = 'wc-request-attribution';
             let heading = document.createElement('div');
             heading.className = 'wc-request-heading';
-            heading.textContent = 'Requested by';
+            heading.textContent = t("Requested by");
             attribution.appendChild(heading);
             let names = document.createElement('ul');
             names.className = 'wc-request-names';
@@ -359,7 +360,7 @@
                     link.type = 'button';
                     link.className = 'wc-profile-name-link';
                     link.textContent = entry.textContent;
-                    link.title = 'WatchCircle-Profil von ' + entry.textContent;
+                    link.title = t("{name}'s WatchCircle profile", { name: entry.textContent });
                     link.addEventListener('click', function () { WatchCircleAssets.showProfiles(profileId); });
                     entry.replaceChildren(link);
                 }
@@ -367,7 +368,7 @@
                 if (overlay.isSeries && seasons.length) {
                     let detail = document.createElement('span');
                     detail.className = 'wc-request-seasons';
-                    detail.textContent = ' · ' + (seasons.length === 1 ? 'Season ' : 'Seasons ') + seasons.join(', ');
+                    detail.textContent = ' · ' + t(seasons.length === 1 ? 'Season {seasons}' : 'Seasons {seasons}', { seasons: seasons.join(', ') });
                     entry.appendChild(detail);
                 }
                 names.appendChild(entry);
@@ -382,14 +383,12 @@
 
         let count = document.createElement('div');
         count.className = 'wc-shared-progress-count';
-        count.textContent = overlay.watchers.length === 1
-            ? '1 person from your groups'
-            : overlay.watchers.length + ' people from your groups';
+        count.textContent = t(overlay.watchers.length === 1 ? '1 person from your groups' : '{count} people from your groups', { count: overlay.watchers.length });
         card.appendChild(count);
 
         let list = document.createElement('ul');
         list.className = 'wc-shared-progress-members';
-        list.setAttribute('aria-label', 'Group members\' watch progress');
+        list.setAttribute('aria-label', t("Group members' watch progress"));
         let watchProgress = getWatchProgress();
         let isEpisodeScoped = overlay.isSeason || overlay.isSeries;
 
@@ -411,7 +410,7 @@
                     runTimeTicks: runtime,
                     variant: 'them',
                     showEpisodeLine: isEpisodeScoped,
-                    statusText: isEpisodeScoped && watcher.played ? 'Episode finished' : undefined
+                    statusText: isEpisodeScoped && watcher.played ? t("Episode finished") : undefined
                 });
                 let track = progress.querySelector('.wc-detail-progress-track');
                 track.setAttribute('role', 'progressbar');
@@ -422,7 +421,7 @@
                     watcher.played, watcher.playbackPositionTicks, runtime)));
                 track.setAttribute('aria-valuetext', [
                     isEpisodeScoped ? watchProgress.formatEpisodeLine(watcher) : '',
-                    isEpisodeScoped && watcher.played ? 'Episode finished' : watchProgress.formatProgressStatus(
+                    isEpisodeScoped && watcher.played ? t("Episode finished") : watchProgress.formatProgressStatus(
                         watcher.played, watcher.playbackPositionTicks, runtime)
                 ].filter(Boolean).join(', '));
                 row.appendChild(progress);
@@ -438,7 +437,7 @@
                 profileButton.type = 'button';
                 profileButton.className = 'wc-profile-name-link ' + profileLabel.className;
                 profileButton.textContent = name;
-                profileButton.title = 'WatchCircle-Profil von ' + name;
+                profileButton.title = t("{name}'s WatchCircle profile", { name: name });
                 profileButton.addEventListener('click', function () { WatchCircleAssets.showProfiles(watcher.Id); });
                 profileLabel.replaceWith(profileButton);
                 let avatarButton = document.createElement('button');
@@ -870,4 +869,8 @@
         refresh: refreshOverlays,
         refreshDetailBuddies: refreshDetailBuddies
     };
+    document.addEventListener('watchcirclelanguagechange', function () {
+        clearAllDetailBuddiesState();
+        scanDetailPage();
+    });
 })();

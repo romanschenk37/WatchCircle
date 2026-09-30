@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.WatchCircleMediaSelect) {
         return;
@@ -25,7 +26,7 @@
 
     function normalizeMedia(media) {
         let id = media.Id || media.id;
-        let name = media.Name || media.name || 'Unknown media';
+        let name = media.Name || media.name || t('Unknown media');
         let secondaryText = media.SecondaryText || media.secondaryText || '';
         let tag = media.PrimaryImageTag || media.primaryImageTag;
         let imageUrl = media.ImageUrl || media.imageUrl || null;
@@ -76,7 +77,7 @@
             return '';
         }
 
-        return date.toLocaleString(undefined, {
+        return date.toLocaleString(WatchCircleI18n.locale(), {
             dateStyle: 'medium',
             timeStyle: 'short'
         });
@@ -101,7 +102,7 @@
 
     function showMediaThumbPlaceholder(wrap) {
         wrap.classList.add('wc-media-thumb-placeholder');
-        wrap.textContent = 'No image';
+        wrap.textContent = t("No image");
     }
 
     function createMediaThumbnailElement(media) {
@@ -166,7 +167,7 @@
 
         let title = document.createElement('p');
         title.className = 'wc-media-select-empty-title';
-        title.textContent = options.emptyTitle || 'No media found';
+        title.textContent = options.emptyTitle || t("No media found");
 
         empty.appendChild(title);
 

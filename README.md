@@ -64,7 +64,7 @@ Your own account is excluded from the poster overlays and the progress rows. Eac
 
 ### People and profiles
 
-The **WatchCircle** button in the web client's header opens a searchable list of everyone sharing at least one group with you. Each person appears once; your own account is excluded. Clicking a person opens a comparison with your existing Jellyfin progress. Names and avatars in the shared progress card open the same profile.
+The **WatchCircle** people button in the web client's header, next to the existing Watch together button, opens a searchable list of everyone sharing at least one group with you. It is added after sign-in and restored when Jellyfin replaces the header. Each person appears once; your own account is excluded. Clicking a person opens a comparison with your existing Jellyfin progress. Names and avatars in the shared progress card open the same profile.
 
 Profiles have three exclusive categories, based on the selected person's data:
 
@@ -74,9 +74,15 @@ Profiles have three exclusive categories, based on the selected person's data:
 
 Every title includes the person's progress and **Du (You)** for comparison, even if you have not started it. The full-screen profile shows **six horizontal poster collections**: started movies, started series, completed movies, completed series, favorite movies and favorite series. Profiles have no search field, category tabs or media filter. The people directory retains its optional person search.
 
-Use **Left/Right** to move within a poster row and **Up/Down** to change rows, **OK/Enter** to open a title or collection, and **Back/Escape** to return. Focus has a strong visible border and the view scrolls it into sight. Each row previews up to 24 titles; **Alle anzeigen (Show all)** opens a grid with all remaining titles available in batches of 48. Returning restores the selected row, focus and scroll position. The people directory focuses a person first, so a remote does not automatically open a text keyboard.
+Use **Left/Right** to move within a poster row and **Up/Down** to change rows or reach their headings, **OK/Enter** to open a title or collection, and **Back/Escape** to return. Focus has a strong visible border and the view scrolls it into sight. Each row previews up to 24 titles; its **clickable heading** opens a grid with all remaining titles available in batches of 48. Returning restores the selected row, focus and scroll position. The people directory focuses a person first, so a remote does not automatically open a text keyboard.
 
-For profiles, series progress covers **all available episodes visible to the viewer, including specials**, with each episode contributing equally. Partial episodes contribute their saved playback fraction. Missing/virtual episodes are excluded, and both users use the same denominator. Completing the last available episode means **up to date**, not that no future seasons will be released. New available episodes can move a series back into Started. Unknown movie runtimes show an unknown percentage rather than inventing one. The detail-page card continues to show the furthest started episode.
+Profile cards use the **same progress display as detail pages**: season and episode for each person's furthest started episode, its watched duration and percentage, or “Episode finished.” Movies show their own playback position. Unknown runtimes show watched duration without inventing a percentage.
+
+A series belongs to Completed only when **all available episodes visible to the viewer, including specials**, are played. Missing/virtual episodes are excluded. Finishing a single episode does not complete the series. Completed means **up to date**, not that no future seasons will be released; new available episodes can move a series back into Started. This category calculation is separate from the displayed episode progress.
+
+### Settings and display language
+
+**WatchCircle** appears under **Plugins** in the dashboard sidebar and opens the existing group and Seerr settings. Plugin labels follow Jellyfin's display language: German (including regional variants) or English. Other languages use English consistently, as in the original plugin. This covers profiles, progress cards, settings and the inherited Watch together dialogs; user names and media titles are not translated.
 
 The server checks common group membership on every profile request and filters library access as the signed-in viewer. Guessing another user's profile URL does not bypass the group check. Profiles read existing Jellyfin progress and favorites without saving additional history or a persistent profile cache.
 

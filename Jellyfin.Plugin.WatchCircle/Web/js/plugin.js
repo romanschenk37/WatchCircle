@@ -108,6 +108,20 @@
         document.head.appendChild(script);
     }
 
+    function loadTranslations(callback) {
+        if (window.WatchCircleI18n) { callback(); return; }
+        if (!window.__watchCircleI18nLoading) {
+            window.__watchCircleI18nLoading = new Promise(function (resolve, reject) {
+                let script = document.createElement('script');
+                script.src = ApiClient.getUrl('WatchCircle/js/utils/i18n.js');
+                script.onload = resolve;
+                script.onerror = function () { script.remove(); window.__watchCircleI18nLoading = null; reject(new Error('Translations unavailable')); };
+                document.head.appendChild(script);
+            });
+        }
+        window.__watchCircleI18nLoading.then(callback).catch(function (error) { console.error('[WatchCircle]', error); });
+    }
+
     function loadAssetUtils(callback) {
         if (window.WatchCircleAssets) {
             callback();
@@ -237,12 +251,14 @@
 
     runWhenApiClientReady(function () {
         loadJellyfinHooks(function () {
-            loadAssetUtils(function () {
-                loadNavbarModule();
+            loadTranslations(function () {
+                loadAssetUtils(function () {
+                    loadNavbarModule();
 
-                if (!tryStart()) {
-                    bindAuthWaiters();
-                }
+                    if (!tryStart()) {
+                        bindAuthWaiters();
+                    }
+                });
             });
         });
     });

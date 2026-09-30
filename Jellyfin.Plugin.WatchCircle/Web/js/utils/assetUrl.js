@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.WatchCircleAssets) {
         return;
@@ -19,19 +20,20 @@
     function showProfiles(memberId) {
         if (!profilesLoading) {
             profilesLoading = Promise.all([
-                loadProfileModule('profileNavigation', 'WatchCircleProfileNavigation'),
-                loadProfileModule('profiles', 'WatchCircleProfiles')
+                loadProfileModule('profiles/profileNavigation', 'WatchCircleProfileNavigation'),
+                loadProfileModule('profiles/profiles', 'WatchCircleProfiles'),
+                loadProfileModule('watchProgress/watchProgress', 'WatchCircleWatchProgress')
             ]).catch(function (error) { profilesLoading = null; throw error; });
         }
         return profilesLoading.then(function () { WatchCircleProfiles.show(memberId); }).catch(function () {
-            window.alert('WatchCircle konnte nicht geladen werden. Bitte versuche es erneut.');
+            window.alert(t("Could not load WatchCircle. Please try again."));
         });
     }
     function loadProfileModule(file, globalName) {
         return new Promise(function (resolve, reject) {
             if (window[globalName]) { resolve(); return; }
             let script = document.createElement('script');
-            script.src = getAssetUrl('components/profiles/' + file + '.js');
+            script.src = getAssetUrl('components/' + file + '.js');
             script.addEventListener('load', function () {
                 if (window[globalName]) resolve();
                 else { script.remove(); reject(new Error('Profile module unavailable')); }

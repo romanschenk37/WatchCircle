@@ -1,20 +1,14 @@
-# WatchCircle 1.0.7.0 — Posterreihen und Fernbedienungs-Navigation
+# WatchCircle 1.0.8.0 — Profile, Navigation und Sprache
 
-Die Profile orientieren sich jetzt an der Jellyfin-Startseite: große Poster in Sammlungsreihen untereinander. Das Suchfeld und die Kategorie-/Medienfilter im Profil wurden entfernt.
+- Profile zeigen den Fortschritt wie die Film-/Seriendetailseite: Staffel, Folge, Wiedergabedauer und Fortschritt der jeweiligen Folge – für die andere Person und dich. Es gelten dieselben Regeln für die am weitesten begonnene Folge.
+- Sammlungsüberschriften wie „Begonnene Serien ›“ öffnen direkt die Sammlung. Der zusätzliche Button „Alle anzeigen“ rechts entfällt. Die Überschriften sind auch über Pfeiltasten erreichbar.
+- Das Personen-Symbol „WatchCircle“ neben dem bisherigen Gemeinsam-schauen-Button wird nach der Anmeldung und nach dem Neuladen der Jellyfin-Kopfzeile zuverlässig ergänzt. Das Symbol benötigt keine externe Symbolschrift.
+- Die Plugin-Einstellungen erscheinen links im Dashboard unter „Plugins → WatchCircle“.
+- Alle Plugin-Texte richten sich nach der Jellyfin-Anzeigesprache: Deutsch oder Englisch, bei anderen Sprachen einheitlich Englisch wie im ursprünglichen Plugin. Das umfasst Profile, Fortschrittskarten, Gruppen-/Seerr-Einstellungen und die übernommenen Gemeinsam-schauen-Dialoge.
 
-- Sechs Reihen: begonnene Filme, begonnene Serien, abgeschlossene Filme, abgeschlossene Serien, favorisierte Filme und favorisierte Serien.
-- Unter jedem Poster bleiben der Fortschritt der Person und dein Fortschritt sichtbar.
-- Links/rechts bewegt den Fokus innerhalb einer Reihe, hoch/runter zwischen den Reihen. OK/Enter öffnet den Titel oder die Sammlung.
-- Zurück/Escape führt von einer Sammlung zum Profil, dann zur Personenliste und zurück zu Jellyfin. Fokus und Scrollposition bleiben beim Zurückkehren erhalten.
-- „Alle anzeigen“ öffnet große Sammlungen als Raster. Weitere Titel lassen sich schrittweise laden; keine Titel werden dauerhaft abgeschnitten.
-- Deutlich sichtbarer Fokus, automatisches Scrollen zum ausgewählten Titel, Tastatur-Fokus innerhalb der Ansicht und Behandlung der Samsung-/LG-Zurück-Tastencodes.
-- Die optionale Suche in der Personenliste bleibt erhalten. Im geöffneten Profil gibt es kein Suchfeld.
+Eine Serie gilt weiterhin erst dann als abgeschlossen, wenn alle verfügbaren, für dich sichtbaren Folgen einschließlich Specials gesehen wurden. „Folge abgeschlossen“ im Fortschrittsbalken bezieht sich auf die angezeigte Folge. Profile verwenden ausschließlich bestehende Jellyfin-Daten; Gruppenrechte und Favoritenzuordnung bleiben erhalten.
 
-WatchCircle erweitert weiterhin die vom Server ausgelieferte Weboberfläche. Die offizielle LG-webOS-App lädt diese Oberfläche und kommt grundsätzlich dafür infrage; echte Gerätetests stehen noch aus. Die offizielle Samsung-Tizen-App bringt ihre eigene Weboberfläche mit, Android TV verwendet eine native Oberfläche. Dort ist eine zusätzliche Client-Integration nötig; diese Version ergänzt keine native TV-App.
-
-Fortschrittsberechnung, Gruppenrechte und die Speicherung bleiben unverändert. Die Profile lesen vorhandene Jellyfin-Daten ohne zusätzliche Historie. Entwickler-Testbuttons und künstliche Testtitel sind ausschließlich Teil der lokalen Vorschau und werden nicht veröffentlicht.
-
-Geprüft: 42 .NET-Tests, sieben JavaScript-Navigationstests, erfolgreicher Release-Build und Browserprüfung mit Beispieldaten (Pfeiltasten, OK/Zurück, simulierte Samsung-/LG-Tasten, 122 Titel, Fokuswiederherstellung, schmale Darstellung und Full HD). Keine Tests auf echten Fernsehern oder dem produktiven Jellyfin-Server.
+Geprüft: 47 .NET-Tests, elf JavaScript-Tests, Release-Build und Browserprüfung mit Beispieldaten (Staffel-/Folgenvergleich, Sammlungslinks, Anmeldung, ersetzte Kopfzeile, Deutsch/Englisch, englische Ersatzsprache, Einstellungen und simulierte Fernbedienungstasten). Kein Zugriff auf den produktiven Server und keine Tests auf echten TV-Geräten.
 
 Update über den bestehenden Plugin-Katalog installieren, Jellyfin zu einem passenden Zeitpunkt neu starten und die Weboberfläche mit **Strg + F5** neu laden.
 

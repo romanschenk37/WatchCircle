@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    function t(key, values) { return WatchCircleI18n.t(key, values); }
 
     if (window.WatchCircleWatchTogetherDialog) {
         return;
@@ -9,15 +10,15 @@
     let DEFAULT_DIALOG_WIDTH = 672;
     let CONTINUE_BUTTON_ID = 'continue';
 
-    let DEFAULTS = {
-        title: 'WatchCircle: Watch together',
-        text: 'Currently watching media with your buddies on this device ?<br> Select who is watching with you to sync their progress.',
-        stillWatchingText: 'Still watching media with your buddies on this device ?<br> Select who is watching with you to sync their progress.',
-        buttons: [{ id: CONTINUE_BUTTON_ID, name: 'Continue', type: 'submit' }],
+    function defaults() { return {
+        title: t("WatchCircle: Watch together"),
+        text: t("Currently watching media with your buddies on this device ?<br> Select who is watching with you to sync their progress."),
+        stillWatchingText: t("Still watching media with your buddies on this device ?<br> Select who is watching with you to sync their progress."),
+        buttons: [{ id: CONTINUE_BUTTON_ID, name: t("Continue"), type: 'submit' }],
         maxWidth: DEFAULT_DIALOG_WIDTH,
-        emptyBuddyTitle: 'No buddies found',
+        emptyBuddyTitle: t("No buddies found"),
         emptyBuddyMessage: ''
-    };
+    }; }
 
     function resolveDescription(options) {
         if (options.html) {
@@ -25,14 +26,14 @@
         }
 
         if (options.stillWatching) {
-            return { text: options.stillWatchingText || DEFAULTS.stillWatchingText };
+            return { text: options.stillWatchingText || defaults().stillWatchingText };
         }
 
         if (options.text) {
             return { text: options.text };
         }
 
-        return { text: DEFAULTS.text };
+        return { text: defaults().text };
     }
 
     function getAssetUrl(path) {
@@ -124,10 +125,10 @@
             selectedUserIds: options && options.selectedUserIds,
             isSelected: options && options.isSelected,
             onChange: options && options.onChange,
-            emptyTitle: (options && options.emptyTitle) || DEFAULTS.emptyBuddyTitle,
+            emptyTitle: (options && options.emptyTitle) || defaults().emptyBuddyTitle,
             emptyMessage: (options && options.emptyMessage !== undefined)
                 ? options.emptyMessage
-                : DEFAULTS.emptyBuddyMessage
+                : defaults().emptyBuddyMessage
         });
 
         return list;
@@ -163,7 +164,7 @@
     function show(options) {
         ensureStyles();
 
-        let merged = Object.assign({}, DEFAULTS, options || {});
+        let merged = Object.assign({}, defaults(), options || {});
         let buddyListElementRef = { current: null };
 
         return Promise.all([
@@ -198,6 +199,6 @@
     window.WatchCircleWatchTogetherDialog = {
         show: show,
         ensureStyles: ensureStyles,
-        defaults: DEFAULTS
+        defaults: defaults()
     };
 })();

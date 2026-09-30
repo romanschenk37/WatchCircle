@@ -169,6 +169,7 @@ public class MemberLibraryService
 
         if (isSeries && items.Count > 0)
         {
+            result.Episode = ItemWatchProgressService.GetFurthestEpisodeProgress(items, rows);
             result.Completed = result.CompletedEpisodes == items.Count;
             result.Percent = fractions / items.Count * 100;
         }
