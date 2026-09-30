@@ -1,7 +1,7 @@
 ---
 name: "WatchCircle"
 guid: "33f774e1-5cb2-4aca-a349-f6ec2bd82c7f"
-version: "1.1.1.0"
+version: "1.1.2.0"
 targetAbi: "12.0.0.0"
 framework: "net9.0"
 overview: "Your groups' watch progress at a glance"
@@ -13,5 +13,5 @@ owner: "romanschenk37"
 artifacts:
   - "Jellyfin.Plugin.WatchCircle.dll"
 changelog: |-
-  - Always show the detail card with your own Jellyfin progress, even before anyone starts watching.
-  - Show Seerr requesters independently of group viewing progress and remove the WatchCircle heading.
+  - Group cleanup administration by series and movies, ordered by descending storage size.
+  - Show Seerr requesters on cleanup cards and list requesters first in title details without duplicate attribution.

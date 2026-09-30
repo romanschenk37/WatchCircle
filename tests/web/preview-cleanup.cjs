@@ -11,6 +11,15 @@ const entry = () => ({ Id: id(2), Media: media, Present: true, Protected: protec
 const nomination = () => ({ Id: id(2), ItemId: id(1), RootItemId: id(1), Name: media.Name, Kind: 'Series', NominationId: id(4), DeleteAt: '2026-10-15T00:00:00Z',
     Answer: answered ? 'Indifferent' : null, AnswerAt: answered ? '2026-09-30T00:00:00Z' : null });
 const replies = () => [{ UserId: id(3), UserName: 'Anna', EntryId: id(2), NominationId: id(5), Answer: 'Keep', At: '2026-05-12T00:00:00Z', Active: false }];
+const overviewEntries = () => [
+    { Entry: entry(), LastUserName: 'Anna', EffectiveProtection: protectedTitle, Collections: [], Replies: replies(), Deletions: [], RestoreErrors: [] },
+    ...[['Movie', 'Das stille Tal', 8000000000], ['Series', 'Nordlicht', 80000000000], ['Movie', 'Die letzte Reise', 21000000000], ['Collection', 'Abenteuer', 29000000000]].map(([Kind, Name, Bytes], index) => ({
+        Entry: { ...entry(), Id: id(index + 20), Media: { ...media, ItemId: id(index + 30), Kind, Name, Bytes },
+            DeleteAt: index === 0 ? '2026-09-01T00:00:00Z' : '2026-10-15T00:00:00Z' },
+        LastUserName: 'Anna', EffectiveProtection: false, Collections: [], Replies: [], Deletions: [], RestoreErrors: []
+    }))
+];
+const requesters = [{ Id: 1, Name: 'Roman', ProfileUserId: id(8) }, { Id: 2, Name: 'Seerr-Gast' }];
 const settings = { Enabled: true, AutomaticDeletion: false, InactivityMonths: 3, WarningDays: 30, IntervalHours: 24, LibraryIds: [id(9)],
     Radarr: { Url: 'http://radarr.example:7878', ApiKey: '', HasApiKey: true, Paths: [], AddImportExclusion: false },
     Sonarr: { Url: 'http://sonarr.example:8989', ApiKey: '', HasApiKey: true, Paths: [{ Jellyfin: '/media', Arr: '/series' }], AddImportExclusion: false } };
@@ -43,6 +52,7 @@ http.createServer(async (req, res) => {
         const number = Number(route.split('/')[2].slice(0,8)), color = number === 1 ? '#45445f' : number === 6 ? '#134853' : '#59442e';
         res.writeHead(200,{'Content-Type':'image/svg+xml'});res.end(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="360"><rect width="240" height="360" fill="${color}"/><circle cx="150" cy="110" r="65" fill="#acabb6" opacity=".3"/><path d="M0 310L170 140 240 240v120H0" fill="#141d29" opacity=".6"/><text x="20" y="300" fill="white" font-family="sans-serif" font-size="18">${number===1?'ZWISCHEN DEN':number===6?'NORDLICHT':'DAS STILLE TAL'}</text>${number===1?'<text x="20" y="325" fill="white" font-family="sans-serif" font-size="24">STERNEN</text>':''}</svg>`);return;
     }
+    if (route.startsWith('/WatchCircle/Seerr/Requests/')) { send(requesters); return; }
     if (!route.startsWith('/WatchCircle/Cleanup/')) { send({},404);return; }
     const api = route.slice('/WatchCircle/Cleanup/'.length); let body=''; for await(const chunk of req)body+=chunk; const input = body ? JSON.parse(body) : {};
     if(api==='Status')send({Enabled:settings.Enabled,IsAdmin:admin});
@@ -54,10 +64,10 @@ http.createServer(async (req, res) => {
     else if(api.startsWith('Admin/Protection/')) {protectedTitle=input.Protected;send({Success:true});}
     else if(api==='Admin/Settings'){if(req.method==='POST')Object.assign(settings,input);send({Settings:settings,Libraries:[{ItemId:id(9),Name:'Filme & Serien'}],Error:null});}
     else if(api.startsWith('Admin/Test/'))send({Version:'Isolierte Vorschau'});
-    else if(api==='Admin/Items'||api==='Admin/Evaluate')send({Enabled:true,AutomaticDeletion:false,Entries:[{Entry:entry(),LastUserName:'Anna',EffectiveProtection:protectedTitle,Collections:[],Replies:replies(),Deletions:[],RestoreErrors:[]}]});
-    else if(api.startsWith('Admin/Items/'))send({Entry:entry(),Mapping:{Id:42,Path:'/series/Zwischen den Sternen'},Requesters:[{Name:'Anna',ProfileUserId:id(3)}],Users:[
-        {Id:id(3),Name:'Anna',IsRequester:true,Open:true,Replies:replies(),Progress:{Started:true,Completed:false,TotalEpisodes:20,CompletedEpisodes:8,Percent:42,Episode:{SeasonIndexNumber:1,EpisodeIndexNumber:9,PlaybackPositionTicks:12000000000,EpisodeRunTimeTicks:30000000000}}},
-        {Id:id(8),Name:'Roman',Open:true,Replies:[],Progress:{Started:true,Completed:false,TotalEpisodes:20,CompletedEpisodes:3,Percent:15,Episode:{Played:true,SeasonIndexNumber:1,EpisodeIndexNumber:3}}},
+    else if(api==='Admin/Items'||api==='Admin/Evaluate')send({Enabled:true,AutomaticDeletion:false,Entries:overviewEntries()});
+    else if(api.startsWith('Admin/Items/'))send({Entry:overviewEntries().find(row=>row.Entry.Id===api.split('/').at(-1)).Entry,Mapping:{Id:42,Path:'/series/Zwischen den Sternen'},Requesters:requesters,Users:[
+        {Id:id(3),Name:'Anna',Open:true,Replies:replies(),Progress:{Started:true,Completed:false,TotalEpisodes:20,CompletedEpisodes:8,Percent:42,Episode:{SeasonIndexNumber:1,EpisodeIndexNumber:9,PlaybackPositionTicks:12000000000,EpisodeRunTimeTicks:30000000000}}},
+        {Id:id(8),Name:'Roman',IsRequester:true,Open:true,Replies:[],Progress:{Started:true,Completed:false,TotalEpisodes:20,CompletedEpisodes:3,Percent:15,Episode:{Played:true,SeasonIndexNumber:1,EpisodeIndexNumber:3}}},
         {Id:id(10),Name:'Alex',Open:true,Replies:[],Progress:{Started:false,Completed:false,TotalEpisodes:20,CompletedEpisodes:0,Percent:0}}
     ]});else send({},404);
 }).listen(8769,'127.0.0.1',()=>process.stdout.write('Cleanup preview: http://127.0.0.1:8769\n'));

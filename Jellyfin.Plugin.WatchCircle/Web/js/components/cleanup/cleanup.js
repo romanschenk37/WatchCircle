@@ -17,6 +17,8 @@
         'Inactive': 'Deaktiviert', 'Manual deletion': 'Manuelle Löschung', 'Automatic deletion': 'Automatische Löschung',
         'Last interaction': 'Letzte Interaktion', 'First observed': 'Beginn der Startfrist', 'Nominated': 'Vorgemerkt seit',
         'Estimated size': 'Geschätzter Speicherbedarf', 'Collections': 'Sammlungen', 'Keep permanently': 'Dauerhaft behalten',
+        'Series': 'Serien', 'Movies': 'Filme', 'Largest titles first': 'Grösste Inhalte zuerst', 'Requested by': 'Angefragt von',
+        'Unavailable': 'Nicht verfügbar', 'No linked Jellyfin account': 'Kein verknüpftes Jellyfin-Konto',
         'Remove protection': 'Dauerhaften Schutz aufheben', 'Protected by a collection': 'Durch eine Sammlung geschützt',
         'Review deletion': 'Löschung prüfen', 'Open title': 'Titel öffnen', 'Mapping': 'Zuordnung', 'Replies': 'Rückmeldungen',
         'No reply yet': 'Noch keine Rückmeldung', 'Requested in Seerr': 'In Seerr angefragt', 'Not started': 'Noch nicht begonnen',
@@ -93,6 +95,7 @@
     let availability = { Enabled: false, IsAdmin: false }, session = '', dialog, body, previousFocus, previousOverflow;
     let currentRender, renderVersion = 0, busy = false, started = false, popupWanted = true, refreshTimer, scanning = false;
     let cache = new Map(), protectionCache = new Map();
+    let requesterObserver, requesterQueue = [], requesterActive = 0;
     const heldKeys = new Set();
     const cardSelector = '.cardImageContainer.cardContent, .cardContent > .cardImageContainer, .listItemImage';
     const focusSelector = 'button:not([disabled]), a[href], input:not([disabled]), select, summary, .wc-clean-user[tabindex]';
@@ -136,6 +139,7 @@
     function trapFocus(event) { if (dialog && !dialog.contains(event.target)) { const first = focusables()[0]; if (first) first.focus(); } }
     function close(force) {
         if (!dialog || (busy && force !== true)) return;
+        clearRequesterCards();
         dialog.remove(); dialog = null; renderVersion++; document.body.style.overflow = previousOverflow;
         window.removeEventListener('keydown', onKey, true); document.removeEventListener('focusin', trapFocus, true);
         if (previousFocus && previousFocus.isConnected) previousFocus.focus();
@@ -158,12 +162,14 @@
         return render(mode === 'settings' ? settings : mode === 'admin' ? admin : feedback);
     }
     async function render(view) {
+        clearRequesterCards();
         currentRender = view; const version = ++renderVersion, viewer = ApiClient.getCurrentUserId(); body.replaceChildren(); body.scrollTop = 0;
         message(body, t('Loading…'));
         try {
             const content = await view();
             if (!dialog || version !== renderVersion || viewer !== ApiClient.getCurrentUserId()) return;
             body.replaceChildren(content);
+            observeRequesterCards(version, viewer);
         } catch (error) {
             if (!dialog || version !== renderVersion || viewer !== ApiClient.getCurrentUserId()) return;
             body.replaceChildren(); problem(body, error); body.appendChild(button(t('Refresh'), () => render(view)));
@@ -209,6 +215,7 @@
     }
     function summary(parent, row) {
         const entry = row.Entry, media = entry.Media;
+        if (entry.NominationId && entry.DeleteAt && new Date(entry.DeleteAt) <= new Date()) message(parent, t('Deletion date reached'), 'wc-clean-due');
         if (entry.DeleteAt) message(parent, t('Earliest deletion: {date}', { date: date(entry.DeleteAt) }), 'wc-clean-due');
         message(parent, t('Last interaction') + ': ' + (entry.LastInteraction ? date(entry.LastInteraction) + ' · ' + (row.LastUserName || t('Unknown')) + ' · ' + t(entry.LastKind) : t('First observed') + ' ' + date(entry.Baseline)));
         if (entry.NominatedAt) message(parent, t('Nominated') + ': ' + date(entry.NominatedAt));
@@ -216,6 +223,41 @@
         if (row.Collections && row.Collections.length) message(parent, t('Collections') + ': ' + row.Collections.map(value => value.Name).join(', '));
         if (row.EffectiveProtection) message(parent, t('Permanently protected'), 'wc-clean-protected');
         [entry.Error, media.Problem].concat(row.RestoreErrors || []).filter(Boolean).forEach(error => diagnostic(parent, { Error: error }));
+    }
+    function clearRequesterCards() {
+        if (requesterObserver) requesterObserver.disconnect();
+        requesterObserver = null; requesterQueue = [];
+    }
+    function observeRequesterCards(version, viewer) {
+        const nodes = Array.from(body.querySelectorAll('[data-wc-clean-request-item]'));
+        const enqueue = node => { requesterQueue.push({ node, itemId: node.dataset.wcCleanRequestItem, version, viewer }); loadRequesterCards(); };
+        if (typeof IntersectionObserver === 'undefined') { nodes.forEach(enqueue); return; }
+        const observer = new IntersectionObserver(entries => {
+            if (!dialog || version !== renderVersion || viewer !== ApiClient.getCurrentUserId()) return;
+            entries.filter(entry => entry.isIntersecting).forEach(entry => {
+                observer.unobserve(entry.target); enqueue(entry.target);
+            });
+        }, { root: body, rootMargin: '300px' });
+        requesterObserver = observer;
+        nodes.forEach(node => observer.observe(node));
+    }
+    function loadRequesterCards() {
+        // Keep large libraries responsive and avoid flooding Seerr with requests.
+        while (requesterActive < 3 && requesterQueue.length) {
+            const task = requesterQueue.shift();
+            const current = () => dialog && task.version === renderVersion && task.viewer === ApiClient.getCurrentUserId() && task.node.isConnected;
+            if (!current()) continue;
+            requesterActive++;
+            Promise.resolve().then(() => ApiClient.ajax({ type: 'GET',
+                url: ApiClient.getUrl('WatchCircle/Seerr/Requests/' + encodeURIComponent(task.itemId)), dataType: 'json' }))
+                .then(normalize).then(requesters => {
+                    if (!current()) return;
+                    const names = (Array.isArray(requesters) ? requesters : []).map(value => value.Name || value.DisplayName).filter(Boolean);
+                    task.node.textContent = t('Requested by') + ': ' + (names.length ? names.join(', ') : '—');
+                }).catch(() => {
+                    if (current()) task.node.textContent = t('Requested by') + ': ' + t('Unavailable');
+                }).finally(() => { requesterActive--; loadRequesterCards(); });
+        }
     }
     let adminFilter = 'scheduled';
     async function admin() {
@@ -240,18 +282,25 @@
             || (adminFilter === 'deleted' && row.Deletions.some(job => job.Phase === 'Deleted'))
             || (adminFilter === 'failed' && (row.Entry.Error || row.Entry.Media.Problem || row.RestoreErrors.length || row.Deletions.some(job => job.Phase !== 'Deleted'))));
         function addGroup(title, rows) {
-            page.appendChild(el('h3', '', t(title))); if (!rows.length) message(page, t('No entries'));
+            const section = el('section', 'wc-clean-media-group'); section.setAttribute('aria-label', t(title));
+            section.appendChild(el('h3', '', t(title))); if (!rows.length) message(section, t('No entries'));
             const grid = el('div', 'wc-clean-grid');
-            rows.forEach(row => {
+            rows.sort((a, b) => (Number(b.Entry.Media.Bytes) || 0) - (Number(a.Entry.Media.Bytes) || 0)
+                || a.Entry.Media.Name.localeCompare(b.Entry.Media.Name, WatchCircleI18n.locale())).forEach(row => {
                 const card = el('article', 'wc-clean-card'); if (row.Entry.Present) card.appendChild(poster(row.Entry.Media));
                 const content = el('div'); content.appendChild(button(row.Entry.Media.Name, () => render(() => details(row)), 'wc-clean-title-link'));
+                if (row.Entry.Present && row.Entry.Media.Kind !== 'Collection') {
+                    const requesters = message(content, t('Requested by') + ': ' + t('Loading…'), 'wc-clean-requesters');
+                    requesters.dataset.wcCleanRequestItem = row.Entry.Media.ItemId;
+                }
                 summary(content, row); card.appendChild(content); grid.appendChild(card);
-            }); page.appendChild(grid);
+            }); section.appendChild(grid); page.appendChild(section);
         }
-        if (adminFilter === 'scheduled') {
-            addGroup('Deletion date reached', entries.filter(row => new Date(row.Entry.DeleteAt) <= new Date()));
-            addGroup('Upcoming deletions', entries.filter(row => new Date(row.Entry.DeleteAt) > new Date()));
-        } else addGroup('Library cleanup', entries);
+        message(page, t('Largest titles first'));
+        addGroup('Series', entries.filter(row => row.Entry.Media.Kind === 'Series'));
+        addGroup('Movies', entries.filter(row => row.Entry.Media.Kind === 'Movie'));
+        const collections = entries.filter(row => row.Entry.Media.Kind === 'Collection');
+        if (collections.length) addGroup('Collections', collections);
         return page;
     }
     async function details(row) {
@@ -275,7 +324,18 @@
             }))));
         }
         const users = el('section', 'wc-clean-users'); users.appendChild(el('h3', '', 'WatchCircle'));
-        (entry.Media.Kind === 'Collection' ? [] : data.Users).forEach(user => {
+        const members = entry.Media.Kind === 'Collection' ? [] : (data.Users || []).slice();
+        const linkedIds = new Set(members.map(user => guid(user.Id)).filter(Boolean));
+        (data.Requesters || []).forEach(requester => {
+            const profileId = guid(requester.ProfileUserId);
+            if (profileId && linkedIds.has(profileId)) {
+                members.filter(user => guid(user.Id) === profileId).forEach(user => { user.IsRequester = true; });
+            } else {
+                members.push({ Name: requester.Name || requester.DisplayName, IsRequester: true, SeerrOnly: true, Replies: [] });
+            }
+        });
+        members.sort((a, b) => Number(!!b.IsRequester) - Number(!!a.IsRequester)
+            || a.Name.localeCompare(b.Name, WatchCircleI18n.locale())).forEach(user => {
             const block = el('article', 'wc-clean-user'), progress = user.Progress;
             block.tabIndex = 0; block.setAttribute('aria-label', user.Name);
             if (progress) {
@@ -284,14 +344,13 @@
                 block.appendChild(WatchCircleWatchProgress.createRow({ labelText: user.Name, progress: raw, runTimeTicks: progress.RuntimeTicks,
                     variant: guid(user.Id) === guid(ApiClient.getCurrentUserId()) ? 'you' : 'them', showEpisodeLine: series,
                     statusText: progress.Started ? undefined : t('Not started'), aggregate: series ? progress : null }));
-            } else message(block, user.Name + ' · ' + t('No current progress data'));
+            } else message(block, user.Name + ' · ' + t(user.SeerrOnly ? 'No linked Jellyfin account' : 'No current progress data'));
             if (user.IsRequester) message(block, t('Requested in Seerr'), 'wc-clean-protected');
             if (progress && !progress.Started && entry.Media.Kind === 'Series') message(block, t('Not started'));
             if (user.Open) message(block, t('No reply yet'));
             user.Replies.slice().reverse().forEach(reply => message(block, t(reply.Answer) + ' · ' + date(reply.At)));
             users.appendChild(block);
         }); if (entry.Media.Kind !== 'Collection') page.appendChild(users);
-        if (data.Requesters && data.Requesters.length) message(page, t('Requested in Seerr') + ': ' + data.Requesters.map(value => value.Name || value.DisplayName).filter(Boolean).join(', '));
         if (row.Deletions.length) {
             page.appendChild(el('h3', '', t('Deletion log')));
             row.Deletions.slice().reverse().forEach(job => { message(page, date(job.At) + ' · ' + t(job.Phase)); if (job.Error) diagnostic(page, { Error: job.Error }); });

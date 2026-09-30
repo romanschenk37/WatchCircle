@@ -14,6 +14,16 @@ WatchCircle 1.1.0.0 ergänzt einen separaten, optionalen Bereich. Er ist nach de
 
 Papierkörbe werden in Radarr/Sonarr eingestellt. Importlisten-Ausschlüsse sind pro Dienst separat einstellbar und zunächst aus. Automatische Löschung muss zusätzlich ausdrücklich aktiviert werden.
 
+Die regelmässige Auswertung läuft bereits als WatchCircle-Hintergrunddienst, auch ohne geöffnete Weboberfläche. Bei aktivierter Funktion wertet er nach dem Serverstart aus und danach im eingestellten Intervall (standardmässig 24 Stunden). Er prüft jede Minute, ob eine Auswertung fällig ist; nach erstmaliger Aktivierung beginnt sie daher normalerweise innerhalb einer Minute. In Jellyfins Liste **Geplante Aufgaben** gibt es dafür keinen separaten Eintrag. **Jetzt auswerten** startet eine zusätzliche Auswertung. Das Vormerken funktioniert auch bei ausgeschalteter automatischer Löschung.
+
+## Verwaltungsübersicht
+
+Die Verwaltung gruppiert alle Statusfilter nach **Serien**, **Filmen** und gegebenenfalls **Sammlungen**. Innerhalb jedes Abschnitts stehen die Inhalte mit dem grössten geschätzten Speicherbedarf zuerst. Bereits erreichte Löschtermine bleiben auf den Kacheln gekennzeichnet.
+
+Auf Kacheln vorhandener Filme und Serien erscheint **Angefragt von** mit den verfügbaren Seerr-Antragstellern. Die Namen werden für sichtbare und nahe Kacheln mit begrenzter Parallelität nachgeladen; die Übersicht wartet nicht auf Seerr. Ohne verfügbare Anfrage erscheint ein Strich. Für bereits entfernte Inhalte wird kein eigener Anfrageverlauf gespeichert.
+
+In der Detailansicht stehen Antragsteller zuerst in der Benutzerliste. Die Zuordnung zu Jellyfin-Fortschritt erfolgt ausschliesslich über die verknüpfte Jellyfin-Benutzer-ID. Seerr-Antragsteller ohne passende Verknüpfung werden ebenfalls oben angezeigt, mit **Kein verknüpftes Jellyfin-Konto**. Gleichnamige Konten werden nicht zusammengeführt.
+
 ## Vormerkung und Rückmeldung
 
 Nach der Inaktivitätsfrist beginnt eine Vormerkung mit voller Vorwarnfrist. Wiederholte Auswertungen verschieben ihr Datum nicht. Geänderte Vorwarnfristen gelten für neue Vormerkungen.

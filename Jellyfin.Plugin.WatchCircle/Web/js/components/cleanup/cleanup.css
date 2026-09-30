@@ -19,6 +19,7 @@
 .wc-clean-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 390px), 1fr)); gap:1.2em; }
 .wc-clean-card { display:flex; align-items:flex-start; gap:1em; background:#20242d; border:1px solid #363b46; border-radius:.8em; padding:1.15em; }
 .wc-clean-card > div { min-width:0; flex:1; }
+.wc-clean-requesters { color:#cfc0ec; line-height:1.5; margin:.5em 0; overflow-wrap:anywhere; }
 .wc-clean-poster { width:86px; aspect-ratio:2 / 3; object-fit:cover; border-radius:.35em; background:#393349; }
 .wc-clean-no-poster { visibility:hidden; }
 .wc-clean-dialog details { margin:.7em 0; overflow-wrap:anywhere; }
