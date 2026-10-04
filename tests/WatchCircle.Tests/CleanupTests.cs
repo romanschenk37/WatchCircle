@@ -349,17 +349,69 @@ public sealed class CleanupTests
         Assert.Equal(nomination, env.Entry.NominationId);
     }
 
-    [Fact]
-    public void MovieActivityPropagatesAcrossEveryDirectCollectionButNotTransitively()
+    [Theory]
+    [InlineData("Movie")]
+    [InlineData("Series")]
+    public void ActivityPropagatesAcrossEveryDirectMixedCollectionButNotTransitively(string kind)
     {
         var state = new CleanupState { Settings = new() { Enabled = true } };
         CleanupEntry a = Entry("1"), b = Entry("2"), c = Entry("3"), d = Entry("4");
+        a.Media.Kind = kind; c.Media.Kind = "Series";
         CleanupEntry Collection(params CleanupEntry[] members) => new() { Media = new() { Kind = "Collection", ItemId = Guid.NewGuid(), Members = members.Select(value => value.Media.ItemId).ToArray() } };
         state.Entries.AddRange(new[] { a, b, c, d, Collection(a, b), Collection(a, c), Collection(c, d) });
         foreach (var value in state.Entries) value.NominationId = Guid.NewGuid();
-        CleanupRules.Interact(state, a, Guid.NewGuid(), "Playback", DateTimeOffset.UtcNow);
-        Assert.Null(a.NominationId); Assert.Null(b.NominationId); Assert.Null(c.NominationId);
-        Assert.NotNull(d.NominationId);
+        var now = DateTimeOffset.UtcNow; var user = Guid.NewGuid();
+        CleanupRules.Interact(state, a, user, "Playback", now);
+        foreach (var value in state.Entries.Where(value => value != d && value != state.Entries.Last()))
+        {
+            Assert.Null(value.NominationId); Assert.Equal(now, value.LastInteraction);
+            Assert.Equal(user, value.LastUserId); Assert.Equal("Playback", value.LastKind);
+        }
+        Assert.NotNull(d.NominationId); Assert.Null(d.LastInteraction);
+        Assert.NotNull(state.Entries.Last().NominationId); Assert.Null(state.Entries.Last().LastInteraction);
+    }
+
+    [Fact]
+    public void OlderCollectionActivityNeverReplacesANewerInteraction()
+    {
+        var state = new CleanupState();
+        var movie = Entry("1"); var series = Entry("2"); series.Media.Kind = "Series";
+        var collection = new CleanupEntry { Media = new() { Kind = "Collection", Members = new[] { movie.Media.ItemId, series.Media.ItemId } } };
+        state.Entries.AddRange(new[] { movie, series, collection });
+        var now = DateTimeOffset.UtcNow; var user = Guid.NewGuid();
+        CleanupRules.Interact(state, series, user, "Keep", now);
+        CleanupRules.Interact(state, movie, Guid.NewGuid(), "Playback", now.AddDays(-1));
+        Assert.All(state.Entries, value =>
+        {
+            Assert.Equal(now, value.LastInteraction); Assert.Equal(user, value.LastUserId); Assert.Equal("Keep", value.LastKind);
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MixedCollectionActivityCancelsNominationsAndAppearsOnEveryAdminCard(bool series)
+    {
+        using var env = new Scenario(series); await env.Due();
+        var sibling = Entry("other"); sibling.Media.Kind = series ? "Movie" : "Series";
+        sibling.Media.LibraryIds = new[] { env.LibraryId }; sibling.Baseline = env.Time.Now.AddMonths(-4);
+        var collection = new CleanupEntry { Media = new() { Kind = "Collection", ItemId = Guid.NewGuid(),
+            Members = new[] { env.Media.ItemId, sibling.Media.ItemId } } };
+        env.Store.Change(state =>
+        {
+            state.Entries.AddRange(new[] { sibling, collection }); CleanupRules.Evaluate(state, env.Time.Now); return true;
+        });
+        env.Observe(env.OtherUser, false, false, UserDataSaveReason.PlaybackStart);
+        env.Store.Change(state => { CleanupRules.Evaluate(state, env.Time.Now); return true; });
+        var rows = Json(env.Service.AdminView()).GetProperty("Entries").EnumerateArray().ToArray();
+        Assert.Equal(3, rows.Length);
+        foreach (var row in rows)
+        {
+            Assert.Equal(JsonValueKind.Null, row.GetProperty("Entry").GetProperty("NominationId").ValueKind);
+            Assert.Equal(env.Time.Now, row.GetProperty("Entry").GetProperty("LastInteraction").GetDateTimeOffset());
+            Assert.Equal("Anna", row.GetProperty("LastUserName").GetString());
+            Assert.Equal("Playback", row.GetProperty("Entry").GetProperty("LastKind").GetString());
+        }
     }
 
     [Fact]
@@ -554,10 +606,12 @@ public sealed class CleanupTests
         Assert.Null(env.Entry.LastInteraction);
     }
 
-    [Fact]
-    public async Task CollectionPlanRefusesToIncludeAProtectedMovie()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CollectionPlanRefusesToIncludeAProtectedTitle(bool series)
     {
-        using var env = new Scenario(); await env.Due();
+        using var env = new Scenario(series); await env.Due();
         var collection = new CleanupEntry { Media = new() { ItemId = Guid.NewGuid(), Kind = "Collection", Members = new[] { env.Media.ItemId } } };
         env.Store.Change(state => { state.Entries.Add(collection); return true; });
         env.Service.Protect(env.Entry.Id, true);

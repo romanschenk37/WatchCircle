@@ -15,6 +15,7 @@ const overviewEntries = () => [
     { Entry: entry(), LastUserName: 'Anna', EffectiveProtection: protectedTitle, Collections: [], Replies: replies(), Deletions: [], RestoreErrors: [] },
     ...[['Movie', 'Das stille Tal', 8000000000], ['Series', 'Nordlicht', 80000000000], ['Movie', 'Die letzte Reise', 21000000000], ['Collection', 'Abenteuer', 29000000000]].map(([Kind, Name, Bytes], index) => ({
         Entry: { ...entry(), Id: id(index + 20), Media: { ...media, ItemId: id(index + 30), Kind, Name, Bytes },
+            LastInteraction: index === 1 ? null : `2026-0${index + 4}-01T10:00:00Z`,
             DeleteAt: index === 0 ? '2026-09-01T00:00:00Z' : '2026-10-15T00:00:00Z' },
         LastUserName: 'Anna', EffectiveProtection: false, Collections: [], Replies: [], Deletions: [], RestoreErrors: []
     }))

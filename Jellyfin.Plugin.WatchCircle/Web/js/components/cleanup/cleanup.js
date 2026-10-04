@@ -7,7 +7,7 @@
         'Scheduled for deletion': 'Zur Löschung vorgemerkt', 'Earliest deletion: {date}': 'Löschung frühestens: {date}',
         'Please keep': 'Bitte noch nicht löschen', 'I do not mind': 'Mir doch egal', 'No open feedback': 'Keine offenen Rückmeldungen',
         'Your answer: {answer} · {date}': 'Deine Antwort: {answer} · {date}', 'Deletion requested; verification pending': 'Löschung angefordert; Bestätigung steht aus',
-        'Keeps the whole series.': 'Behält die ganze Serie.', 'Also keeps the movies in its collections.': 'Behält auch die Filme seiner Sammlungen.',
+        'Keeps the whole series.': 'Behält die ganze Serie.', 'Also keeps the movies and series in its collections.': 'Behält auch die Filme und Serien der zugehörigen Sammlungen.',
         'Feedback does not shorten the warning period. You can change your answer on the title page.': 'Eine Rückmeldung verkürzt die Vorwarnfrist nicht. Auf der Titelseite kannst du deine Antwort ändern.',
         'Could not load or save. Please refresh and try again.': 'Laden oder Speichern fehlgeschlagen. Bitte aktualisieren und erneut versuchen.',
         'Refresh': 'Aktualisieren', 'Technical details': 'Technische Details', 'No entries': 'Keine Einträge',
@@ -17,13 +17,17 @@
         'Inactive': 'Deaktiviert', 'Manual deletion': 'Manuelle Löschung', 'Automatic deletion': 'Automatische Löschung',
         'Last interaction': 'Letzte Interaktion', 'First observed': 'Beginn der Startfrist', 'Nominated': 'Vorgemerkt seit',
         'Estimated size': 'Geschätzter Speicherbedarf', 'Collections': 'Sammlungen', 'Keep permanently': 'Dauerhaft behalten',
-        'Series': 'Serien', 'Movies': 'Filme', 'Largest titles first': 'Grösste Inhalte zuerst', 'Requested by': 'Angefragt von',
+        'Series': 'Serien', 'Movies': 'Filme', 'Requested by': 'Angefragt von',
+        'Sort by': 'Sortierung', 'Alphabetical (A–Z)': 'Alphabetisch (A–Z)', 'Alphabetical (Z–A)': 'Alphabetisch (Z–A)',
+        'Size (largest first)': 'Speicherplatzbedarf (grösste zuerst)', 'Size (smallest first)': 'Speicherplatzbedarf (kleinste zuerst)',
+        'Last interaction (oldest first)': 'Letzte Interaktion (älteste zuerst)', 'Last interaction (newest first)': 'Letzte Interaktion (neuste zuerst)',
+        'Without a recorded interaction, the start of the initial waiting period is used.': 'Ohne erfasste Interaktion wird der Beginn der Startfrist verwendet.',
         'Unavailable': 'Nicht verfügbar', 'No linked Jellyfin account': 'Kein verknüpftes Jellyfin-Konto',
         'Remove protection': 'Dauerhaften Schutz aufheben', 'Protected by a collection': 'Durch eine Sammlung geschützt',
         'Review deletion': 'Löschung prüfen', 'Open title': 'Titel öffnen', 'Mapping': 'Zuordnung', 'Replies': 'Rückmeldungen',
         'No reply yet': 'Noch keine Rückmeldung', 'Requested in Seerr': 'In Seerr angefragt', 'Not started': 'Noch nicht begonnen',
         'Unknown': 'Unbekannt', 'Playback': 'Wiedergabe', 'WatchedStatus': 'Gesehen-Status geändert', 'FavoriteAdded': 'Favorit hinzugefügt',
-        'No current progress data': 'Keine aktuellen Fortschrittsdaten', 'Movies in this collection': 'Filme in dieser Sammlung',
+        'No current progress data': 'Keine aktuellen Fortschrittsdaten', 'Movies and series in this collection': 'Filme und Serien in dieser Sammlung',
         'Keep': 'Bitte noch nicht löschen', 'Indifferent': 'Mir doch egal', 'ObservationStart': 'Startfrist',
         'Confirm deletion': 'Löschung bestätigen', 'Delete listed titles and files': 'Aufgeführte Titel und Dateien löschen',
         'These titles and their media files will be removed through Radarr/Sonarr.': 'Diese Titel und ihre Mediendateien werden über Radarr/Sonarr entfernt.',
@@ -210,7 +214,8 @@
             const card = el('article', 'wc-clean-card'); card.appendChild(poster(item));
             const content = el('div'); content.appendChild(button(item.Name, () => openTitle(item.ItemId), 'wc-clean-title-link'));
             message(content, t('Earliest deletion: {date}', { date: date(item.DeleteAt) }), 'wc-clean-due');
-            message(content, t(item.Kind === 'Series' ? 'Keeps the whole series.' : 'Also keeps the movies in its collections.'));
+            if (item.Kind === 'Series') message(content, t('Keeps the whole series.'));
+            message(content, t('Also keeps the movies and series in its collections.'));
             replyControls(content, item, () => render(feedback)); card.appendChild(content); list.appendChild(card);
         }); page.appendChild(list); return page;
     }
@@ -260,7 +265,7 @@
                 }).finally(() => { requesterActive--; loadRequesterCards(); });
         }
     }
-    let adminFilter = 'scheduled';
+    let adminFilter = 'scheduled', adminSort = 'size-desc';
     async function admin() {
         if (!availability.IsAdmin) throw new Error(t('Only administrators can access this view.'));
         const data = await api('Admin/Items'), page = el('div'); navigation(page);
@@ -282,26 +287,61 @@
             || (adminFilter === 'protected' && row.EffectiveProtection)
             || (adminFilter === 'deleted' && row.Deletions.some(job => job.Phase === 'Deleted'))
             || (adminFilter === 'failed' && (row.Entry.Error || row.Entry.Media.Problem || row.RestoreErrors.length || row.Deletions.some(job => job.Phase !== 'Deleted'))));
+        const groups = [], collator = new Intl.Collator(WatchCircleI18n.locale(), { numeric: true, sensitivity: 'base' });
+        function interactionTime(entry) {
+            const last = Date.parse(entry.LastInteraction);
+            return Number.isFinite(last) ? last : Date.parse(entry.Baseline);
+        }
+        function compareRows(a, b) {
+            const names = collator.compare(a.Entry.Media.Name, b.Entry.Media.Name);
+            const direction = adminSort.endsWith('-desc') ? -1 : 1;
+            if (adminSort.startsWith('name-')) return names * direction;
+            if (adminSort.startsWith('interaction-')) {
+                const first = interactionTime(a.Entry), second = interactionTime(b.Entry);
+                // Unknown dates stay at the end in either direction.
+                if (Number.isFinite(first) !== Number.isFinite(second)) return Number.isFinite(first) ? -1 : 1;
+                return (first - second) * direction || names;
+            }
+            return ((Number(a.Entry.Media.Bytes) || 0) - (Number(b.Entry.Media.Bytes) || 0)) * direction || names;
+        }
+        function sortGroups() {
+            groups.forEach(group => group.cards.sort((a, b) => compareRows(a.row, b.row))
+                .forEach(value => group.grid.appendChild(value.card)));
+        }
+        const sortField = el('label', 'wc-clean-sort'), sortSelect = el('select', 'wc-clean-sort-select');
+        sortField.appendChild(el('span', '', t('Sort by')));
+        [['name-asc', 'Alphabetical (A–Z)'], ['name-desc', 'Alphabetical (Z–A)'],
+            ['size-desc', 'Size (largest first)'], ['size-asc', 'Size (smallest first)'],
+            ['interaction-asc', 'Last interaction (oldest first)'], ['interaction-desc', 'Last interaction (newest first)']].forEach(pair => {
+            const option = el('option', '', t(pair[1])); option.value = pair[0]; sortSelect.appendChild(option);
+        });
+        sortSelect.value = adminSort;
+        const sortHint = el('p', 'wc-clean-muted', t('Without a recorded interaction, the start of the initial waiting period is used.'));
+        sortHint.id = 'wc-clean-sort-hint'; sortHint.hidden = !adminSort.startsWith('interaction-');
+        sortSelect.setAttribute('aria-describedby', sortHint.id);
+        sortSelect.addEventListener('change', () => {
+            adminSort = sortSelect.value; sortHint.hidden = !adminSort.startsWith('interaction-'); sortGroups();
+        });
+        sortField.appendChild(sortSelect); page.appendChild(sortField); page.appendChild(sortHint);
         function addGroup(title, rows) {
             const section = el('section', 'wc-clean-media-group'); section.setAttribute('aria-label', t(title));
             section.appendChild(el('h3', '', t(title))); if (!rows.length) message(section, t('No entries'));
-            const grid = el('div', 'wc-clean-grid');
-            rows.sort((a, b) => (Number(b.Entry.Media.Bytes) || 0) - (Number(a.Entry.Media.Bytes) || 0)
-                || a.Entry.Media.Name.localeCompare(b.Entry.Media.Name, WatchCircleI18n.locale())).forEach(row => {
+            const grid = el('div', 'wc-clean-grid'), cards = [];
+            rows.forEach(row => {
                 const card = el('article', 'wc-clean-card'); if (row.Entry.Present) card.appendChild(poster(row.Entry.Media));
                 const content = el('div'); content.appendChild(button(row.Entry.Media.Name, () => render(() => details(row)), 'wc-clean-title-link'));
                 if (row.Entry.Present && row.Entry.Media.Kind !== 'Collection') {
                     const requesters = message(content, t('Requested by') + ': ' + t('Loading…'), 'wc-clean-requesters');
                     requesters.dataset.wcCleanRequestItem = row.Entry.Media.ItemId;
                 }
-                summary(content, row); card.appendChild(content); grid.appendChild(card);
-            }); section.appendChild(grid); page.appendChild(section);
+                summary(content, row); card.appendChild(content); cards.push({ row, card });
+            }); groups.push({ grid, cards }); section.appendChild(grid); page.appendChild(section);
         }
-        message(page, t('Largest titles first'));
         addGroup('Series', entries.filter(row => row.Entry.Media.Kind === 'Series'));
         addGroup('Movies', entries.filter(row => row.Entry.Media.Kind === 'Movie'));
         const collections = entries.filter(row => row.Entry.Media.Kind === 'Collection');
         if (collections.length) addGroup('Collections', collections);
+        sortGroups();
         return page;
     }
     async function details(row) {
@@ -319,7 +359,7 @@
         if (data.Mapping) message(page, t('Mapping') + ': ' + data.Mapping.Id + ' · ' + data.Mapping.Path);
         if (data.MappingError) { message(page, t('Mapping') + ': ' + t('No access or unavailable')); diagnostic(page, { Error: data.MappingError }); }
         if (data.Members && data.Members.length) {
-            page.appendChild(el('h3', '', t('Movies in this collection')));
+            page.appendChild(el('h3', '', t('Movies and series in this collection')));
             data.Members.forEach(member => page.appendChild(button(member.Name, () => render(async () => {
                 const overview = await api('Admin/Items'); return details(overview.Entries.find(value => value.Entry.Id === member.Id));
             }))));

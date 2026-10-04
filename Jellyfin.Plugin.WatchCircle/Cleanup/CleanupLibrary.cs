@@ -45,7 +45,7 @@ internal sealed class CleanupLibrary : ICleanupLibrary
         foreach (var item in items)
         {
             var collection = item as BoxSet;
-            var children = collection?.GetLinkedChildren().Where(value => value is Movie).Select(value => value.Id).Distinct().ToArray() ?? Array.Empty<Guid>();
+            var children = collection?.GetLinkedChildren().Where(value => value is Movie or Series).Select(value => value.Id).Distinct().ToArray() ?? Array.Empty<Guid>();
             var physical = collection is null ? ProgressItems(item) : Array.Empty<BaseItem>();
             var paths = physical.SelectMany(value => value is IHasMediaSources sources
                 ? sources.GetMediaSources(false).Select(source => source.Path)
@@ -79,7 +79,7 @@ internal sealed class CleanupLibrary : ICleanupLibrary
             });
         }
 
-        foreach (var media in result.Where(value => value.Kind == "Movie"))
+        foreach (var media in result.Where(value => value.Kind is "Movie" or "Series"))
         {
             media.Collections = result.Where(value => value.Kind == "Collection" && value.Members.Contains(media.ItemId)).Select(value => value.ItemId).ToArray();
         }

@@ -4,6 +4,8 @@
 .wc-clean-body { padding:1.5em 3vw 4em; overflow:auto; flex:1; }
 .wc-clean-dialog h3 { margin:1.4em 0 .8em; font-size:1.35em; }
 .wc-clean-actions { display:flex; flex-wrap:wrap; gap:.7em; margin:.8em 0 1.3em; }
+.wc-clean-sort { display:flex; flex-wrap:wrap; align-items:center; gap:.75em; margin:1em 0; }
+.wc-clean-sort-select { font:inherit; color:inherit; background:#282d38; border:1px solid #525a69; border-radius:.45em; min-height:48px; min-width:0; max-width:100%; padding:.65em .8em; }
 .wc-clean-action, .wc-clean-title-link { font:inherit; color:inherit; cursor:pointer; border:1px solid #525a69; border-radius:.45em; background:#282d38; min-height:48px; padding:.65em 1em; }
 .wc-clean-action[aria-pressed="true"] { border-color:#c6a6ff; background:#45365d; }
 .wc-clean-action:disabled { opacity:.55; cursor:default; }

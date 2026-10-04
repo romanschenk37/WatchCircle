@@ -36,7 +36,7 @@ Beide bisherigen Hintergrundtimer entfallen. Ohne Jellyfin-Auslöser und ohne ma
 
 ## Verwaltungsübersicht
 
-Die Verwaltung gruppiert alle Statusfilter nach **Serien**, **Filmen** und gegebenenfalls **Sammlungen**. Innerhalb jedes Abschnitts stehen die Inhalte mit dem grössten geschätzten Speicherbedarf zuerst. Bereits erreichte Löschtermine bleiben auf den Kacheln gekennzeichnet.
+Die Verwaltung gruppiert alle Statusfilter nach **Serien**, **Filmen** und gegebenenfalls **Sammlungen**. Unter **Sortierung** stehen **Alphabetisch (A–Z / Z–A)**, **Speicherplatzbedarf (grösste / kleinste zuerst)** und **Letzte Interaktion (älteste / neuste zuerst)** zur Auswahl. Die Reihenfolge gilt innerhalb jedes Abschnitts; Vorgabe bleibt der grösste geschätzte Speicherbedarf zuerst. Bei fehlender Interaktion wird der angezeigte Beginn der Startfrist verwendet; Inhalte ohne beide Datumswerte stehen in beiden Richtungen zuletzt. Die Auswahl bleibt beim Wechsel der Statusfilter und bei der Rückkehr aus einer Detailansicht erhalten, bis die Weboberfläche neu geladen wird. Bereits erreichte Löschtermine bleiben auf den Kacheln gekennzeichnet.
 
 Auf Kacheln vorhandener Filme und Serien erscheint **Angefragt von** mit den verfügbaren Seerr-Antragstellern. Die Namen werden für sichtbare und nahe Kacheln mit begrenzter Parallelität nachgeladen; die Übersicht wartet nicht auf Seerr. Ohne verfügbare Anfrage erscheint ein Strich. Für bereits entfernte Inhalte wird kein eigener Anfrageverlauf gespeichert.
 
@@ -62,7 +62,7 @@ Das Erreichen des Löschdatums beendet offene Rückmeldungen nicht. Solange der 
 
 Serverseitig zählen Wiedergabestart/-fortschritt/-ende, manuelle Änderungen des Gesehen-Status, neu hinzugefügte Favoriten und **Bitte noch nicht löschen**. Vorhandene Favoriten verlängern die Frist nicht bei jedem Durchlauf. Detailseitenaufrufe und reine Metadatenänderungen zählen nicht als Wiedergabe.
 
-Eine Folge schützt die ganze Serie. Ein Film schützt alle Filme jeder Jellyfin-Sammlung, der er direkt angehört. Diese Ausbreitung ist nicht beliebig transitiv über weitere Sammlungen anderer Filme.
+Eine Folge schützt die ganze Serie. Eine Interaktion mit einem Film oder einer Serie gilt auch für alle Filme und Serien jeder Jellyfin-Sammlung, der der Titel direkt angehört. Dadurch entfallen dort offene Löschvormerkungen und die Inaktivitätsfrist beginnt neu. Die Verwaltung zeigt den weitergegebenen Zeitpunkt samt Benutzer und Interaktionsart unter **Letzte Interaktion** an; auch die Sortierung verwendet ihn. Eine bereits neuere Interaktion wird durch ältere nachgelesene Aktivität nicht überschrieben. Diese Ausbreitung ist nicht beliebig transitiv über weitere Sammlungen anderer Mitglieder. Die Mitgliedschaften werden bei der Auswertung eingelesen; die Erweiterung auf Serien gilt für danach erfasste Interaktionen, frühere Ereignisse werden nicht rückwirkend rekonstruiert.
 
 Alle Jellyfin-Benutzer zählen, einschliesslich Administratoren und Personen ausserhalb gemeinsamer Gruppen. Nur die aktive **Mir doch egal**-Antwort des interagierenden Benutzers wird im betroffenen Umfang zurückgesetzt. Historie und Antworten anderer Benutzer bleiben erhalten.
 
@@ -72,13 +72,13 @@ Jellyfin hat keine zuverlässigen historischen Zeitstempel für jede Favoriten- 
 
 Die Verwaltung trennt fällige und bevorstehende Löschungen. Weitere Filter zeigen auf Wunsch behaltene, dauerhaft geschützte, gelöschte, fehlgeschlagene/unvollständige und alle Titel. Einträge führen zu letzter Aktivität, Vormerkung, Speicherbedarf, Arr-Zuordnung, Antworten, offenen Rückmeldungen und Löschprotokoll.
 
-Die Admin-Kachel zeigt **alle** bestehenden Benutzer, auch den angemeldeten Administrator und Personen ohne begonnenen Fortschritt. Serien verwenden dieselbe Gesamtfortschrittsberechnung wie normale WatchCircle-Kacheln. Seerr-Anfragende und frühere Antworten stehen daneben. Sammlungen verlinken einzelne Filme. Für entfernte Inhalte ohne aktuelle Jellyfin-Daten wird kein Fortschritt erfunden. Die Admin-Endpunkte verlangen serverseitig Jellyfins Administratorberechtigung.
+Die Admin-Kachel zeigt **alle** bestehenden Benutzer, auch den angemeldeten Administrator und Personen ohne begonnenen Fortschritt. Serien verwenden dieselbe Gesamtfortschrittsberechnung wie normale WatchCircle-Kacheln. Seerr-Anfragende und frühere Antworten stehen daneben. Sammlungen verlinken die enthaltenen Filme und Serien. Für entfernte Inhalte ohne aktuelle Jellyfin-Daten wird kein Fortschritt erfunden. Die Admin-Endpunkte verlangen serverseitig Jellyfins Administratorberechtigung.
 
 Administratoren können Filme, Serien und Sammlungen auf Detailseiten oder in der Verwaltung **dauerhaft behalten**. Schutz gilt auch für neue Folgen/Sammlungsmitglieder, übersteht Neustarts und wird bei eindeutiger Identität auf neue Jellyfin-IDs übertragen. Noch nicht versendete Aufträge werden ungültig. Nach Aufheben beginnt eine neue Startfrist; eine spätere Vormerkung bekommt die volle Warnfrist.
 
 ## Löschablauf
 
-Eine manuelle Bestätigung zeigt den konkreten Umfang und gilt 15 Minuten. Sammlungen werden pro Film verarbeitet/protokolliert. Geschützte oder nicht fällige Filme können nicht in einen solchen Auftrag aufgenommen werden.
+Eine manuelle Bestätigung zeigt den konkreten Umfang und gilt 15 Minuten. Sammlungen werden pro enthaltenem Film beziehungsweise pro Serie verarbeitet/protokolliert. Geschützte oder nicht fällige Titel können nicht in einen solchen Auftrag aufgenommen werden.
 
 Unmittelbar vor jedem Versand werden Bestand, Mediathekenauswahl, Schutz, Fristen, neue Aktivität und Wiedergabesitzungen erneut geprüft. Auch pausierte Sitzungen im betroffenen Umfang verhindern die Löschung. Fehler der Zustandsdatei blockieren sie.
 

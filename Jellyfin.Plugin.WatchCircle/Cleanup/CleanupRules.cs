@@ -33,11 +33,6 @@ internal static class CleanupRules
 
     internal static IReadOnlyList<CleanupEntry> Scope(CleanupState state, CleanupEntry entry)
     {
-        if (entry.Media.Kind == "Series")
-        {
-            return new[] { entry };
-        }
-
         var collections = state.Entries.Where(value => value.Media.Kind == "Collection"
             && (value.Id == entry.Id || value.Media.Members.Contains(entry.Media.ItemId))).ToArray();
         var itemIds = collections.SelectMany(value => value.Media.Members).Append(entry.Media.ItemId).ToHashSet();
@@ -56,6 +51,12 @@ internal static class CleanupRules
     {
         foreach (var affected in Scope(state, entry))
         {
+            // A later scan of another collection member must not move activity backwards.
+            if (affected.LastInteraction > now)
+            {
+                continue;
+            }
+
             affected.LastInteraction = now;
             affected.LastUserId = userId;
             affected.LastKind = kind;

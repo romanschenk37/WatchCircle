@@ -11,7 +11,7 @@ class Element {
         this.tagName = tag; this.children = []; this.style = {}; this.attributes = {}; this.dataset = {}; this.events = {};
         this.className = ''; this.classList = { add: name => { this.className += ' ' + name; } };
     }
-    appendChild(child) { child.parent = this; this.children.push(child); return child; }
+    appendChild(child) { if (child.parent) child.remove(); child.parent = this; this.children.push(child); return child; }
     remove() { this.parent.children = this.parent.children.filter(child => child !== this); this.parent = null; }
     replaceChildren(...children) { this.children.forEach(child => { child.parent = null; }); this.children = []; children.forEach(child => this.appendChild(child)); }
     setAttribute(key, value) { this.attributes[key] = value; }
@@ -34,7 +34,7 @@ class Element {
 
 function entry(n, kind, size, name, extra = {}) {
     return { Entry: { Id: id(n), Media: { ItemId: id(n + 100), Kind: kind, Bytes: size, Name: name }, Present: true,
-        NominationId: id(90), DeleteAt: '2000-01-01T00:00:00Z', ...extra }, Replies: [], Deletions: [], RestoreErrors: [] };
+        NominationId: id(90), DeleteAt: '2000-01-01T00:00:00Z', LastKind: 'Playback', ...extra }, Replies: [], Deletions: [], RestoreErrors: [] };
 }
 const mixed = () => [entry(1, 'Movie', 9, 'Small movie'), entry(2, 'Series', 2, 'Small series'),
     entry(3, 'Movie', 40, 'Big movie'), entry(4, 'Series', 100, 'Big series'), entry(5, 'Collection', 50, 'Collection')];
@@ -72,6 +72,8 @@ function load({ rows = mixed(), requesters = () => [], users = [], detailRequest
     }
     return { document, calls, observers, changeViewer: () => { viewer = id(71); },
         async show() { await context.window.WatchCircleCleanup.show('admin'); await flush(); },
+        async sort(value) { const control = document.querySelector('select');
+            assert.ok(control, 'Missing sort selector'); control.value = value; control.events.change(); await flush(); },
         async click(text) { const control = document.querySelectorAll('button').find(node => node.textContent === text);
             assert.ok(control, 'Missing button: ' + text); await control.click(); await flush(); } };
 }
@@ -103,6 +105,59 @@ test('request attribution loads without blocking cards, treats names as text and
     assert.equal(cards[4].querySelector('.wc-clean-requesters'), null);
 });
 
+test('all six sort choices reorder each media group without reloading or replacing cards', async () => {
+    const page = load({ rows: [
+        entry(1, 'Movie', 9, 'Zebra', { LastInteraction: '2026-01-01T10:00:00Z' }),
+        entry(2, 'Movie', 100, 'Äther 10', { LastInteraction: '2026-03-01T10:00:00Z' }),
+        entry(3, 'Movie', 40, 'Äther 2', { LastInteraction: null, Baseline: '2026-02-01T10:00:00Z' }),
+        entry(4, 'Series', 20, 'Zulu', { LastInteraction: '2026-01-01T10:00:00Z' }),
+        entry(5, 'Series', 2, 'Alpha', { LastInteraction: '2026-03-01T10:00:00Z' })
+    ] });
+    await page.show();
+    const cards = page.document.querySelectorAll('.wc-clean-card'), calls = page.calls.length;
+    for (const [sort, series, movies] of [
+        ['name-asc', ['Alpha', 'Zulu'], ['Äther 2', 'Äther 10', 'Zebra']],
+        ['name-desc', ['Zulu', 'Alpha'], ['Zebra', 'Äther 10', 'Äther 2']],
+        ['size-asc', ['Alpha', 'Zulu'], ['Zebra', 'Äther 2', 'Äther 10']],
+        ['size-desc', ['Zulu', 'Alpha'], ['Äther 10', 'Äther 2', 'Zebra']],
+        ['interaction-asc', ['Zulu', 'Alpha'], ['Zebra', 'Äther 2', 'Äther 10']],
+        ['interaction-desc', ['Alpha', 'Zulu'], ['Äther 10', 'Äther 2', 'Zebra']]
+    ]) {
+        await page.sort(sort);
+        assert.deepEqual(page.document.querySelectorAll('.wc-clean-media-group').map(section =>
+            section.querySelectorAll('.wc-clean-title-link').map(node => node.textContent)), [series, movies], sort);
+        assert.equal(page.calls.length, calls, 'Sorting must not fetch cleanup or Seerr data again');
+        const moved = page.document.querySelectorAll('.wc-clean-card');
+        assert.equal(moved.length, cards.length);
+        assert.ok(cards.every(card => moved.includes(card)));
+        assert.equal(page.document.querySelectorAll('p').find(node => node.id === 'wc-clean-sort-hint').hidden,
+            !sort.startsWith('interaction-'));
+    }
+    await page.click('Alle Titel');
+    await page.click('Äther 10');
+    await page.click('Zurück');
+    assert.equal(page.document.querySelector('select').value, 'interaction-desc');
+    assert.deepEqual(page.document.querySelectorAll('.wc-clean-title-link').map(node => node.textContent),
+        ['Alpha', 'Zulu', 'Äther 10', 'Äther 2', 'Zebra']);
+});
+
+test('interaction sorting uses the recorded interaction before the baseline and keeps unknown dates last', async () => {
+    const page = load({ rows: [
+        entry(1, 'Movie', 1, 'Zulu', { LastInteraction: '2026-02-01T11:00:00+01:00', Baseline: '2026-09-01T00:00:00Z' }),
+        entry(2, 'Movie', 1, 'Alpha', { LastInteraction: '2026-02-01T10:00:00Z' }),
+        entry(3, 'Movie', 1, 'Baseline', { LastInteraction: 'invalid', Baseline: '2026-01-01T00:00:00Z' }),
+        entry(4, 'Movie', 1, 'Unknown', { LastInteraction: null, Baseline: null }),
+        entry(5, 'Movie', 1, 'Broken', { LastInteraction: 'invalid', Baseline: 'invalid' })
+    ] });
+    await page.show();
+    await page.sort('interaction-asc');
+    assert.deepEqual(page.document.querySelectorAll('.wc-clean-title-link').map(node => node.textContent),
+        ['Baseline', 'Alpha', 'Zulu', 'Broken', 'Unknown']);
+    await page.sort('interaction-desc');
+    assert.deepEqual(page.document.querySelectorAll('.wc-clean-title-link').map(node => node.textContent),
+        ['Alpha', 'Zulu', 'Baseline', 'Broken', 'Unknown']);
+});
+
 test('linked requesters come first, retain their own progress, and unlinked names never match an unrelated account', async () => {
     const page = load({ users: [
         { Id: id(10), Name: 'Alex', Replies: [], Progress: { Started: false } },
@@ -123,6 +178,10 @@ test('English labels and empty groups remain usable without Seerr requesters', a
     const page = load({ rows: [entry(1, 'Movie', 0, 'Movie')], language: 'en' }); await page.show();
     assert.deepEqual(page.document.querySelectorAll('.wc-clean-media-group').map(node => node.attributes['aria-label']), ['Series', 'Movies']);
     assert.equal(page.document.querySelector('.wc-clean-requesters').textContent, 'Requested by: —');
+    assert.equal(page.document.querySelector('select').value, 'size-desc');
+    assert.deepEqual(page.document.querySelectorAll('option').map(node => node.textContent), [
+        'Alphabetical (A–Z)', 'Alphabetical (Z–A)', 'Size (largest first)', 'Size (smallest first)',
+        'Last interaction (oldest first)', 'Last interaction (newest first)']);
 });
 
 test('only nearby cards load Seerr with at most three concurrent calls; navigation cancels the remaining queue', async () => {
